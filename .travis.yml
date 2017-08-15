@@ -1,0 +1,25 @@
+sudo: required
+
+language: go
+
+services:
+  - docker
+
+go:
+  - master
+
+before_install:
+  # install goveralls
+  - go get github.com/mattn/goveralls
+  # build test image
+  - docker build -t tests -f test.Dockerfile .
+
+script:
+  # unit tests
+  - docker run --name tests --rm tests
+  # coverage output
+  - go test -coverprofile=coverage.out
+
+after_success:
+  # send coverage report to coveralls
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
