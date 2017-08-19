@@ -1,9 +1,9 @@
 package dairyclient_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,6 +25,19 @@ const (
 
 func buildTestCookie() *http.Cookie {
 	c := &http.Cookie{Name: "dairycart"}
+	return c
+}
+
+func buildTestClient(t *testing.T, ts *httptest.Server) *dairyclient.V1Client {
+	u, err := url.Parse(ts.URL)
+	assert.Nil(t, err)
+
+	c := &dairyclient.V1Client{
+		URL:        u,
+		Client:     ts.Client(),
+		AuthCookie: buildTestCookie(),
+	}
+
 	return c
 }
 
@@ -97,9 +110,6 @@ func TestDairyClientAddsCookieToRequest(t *testing.T) {
 	var skuEndpointCalled bool
 
 	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		"/login": func(w http.ResponseWriter, r *http.Request) {
-			http.SetCookie(w, buildTestCookie())
-		},
 		"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
 			skuEndpointCalled = true
 			cookies := req.Cookies()
@@ -119,12 +129,22 @@ func TestDairyClientAddsCookieToRequest(t *testing.T) {
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
 	defer ts.Close()
+	c := buildTestClient(t, ts)
 
-	c, err := dairyclient.NewV1Client(ts.URL, exampleUsername, examplePassword, ts.Client())
-
-	res, err := c.CheckProductExistence("sku")
+	res, err := c.ProductExists("sku")
 
 	assert.NotNil(t, res)
 	assert.Nil(t, err)
 	assert.True(t, skuEndpointCalled)
+}
+
+func TestBuildURLReturnsErrorWhenFailingToParseURLParts(t *testing.T) {
+	ts := httptest.NewServer(http.NotFoundHandler())
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	actual, err := c.BuildURL(nil, `%gh&%ij`)
+
+	assert.NotNil(t, err)
+	assert.Empty(t, actual)
 }

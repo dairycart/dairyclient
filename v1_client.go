@@ -13,16 +13,16 @@ const (
 	currentAPIVersion = `v1`
 )
 
-type DairyclientV1 struct {
+type V1Client struct {
 	*http.Client
 	URL        *url.URL
 	AuthCookie *http.Cookie
 }
 
-func NewV1Client(storeURL string, username string, password string, client *http.Client) (*DairyclientV1, error) {
-	var dc *DairyclientV1
+func NewV1Client(storeURL string, username string, password string, client *http.Client) (*V1Client, error) {
+	var dc *V1Client
 	if client != nil {
-		dc = &DairyclientV1{Client: client}
+		dc = &V1Client{Client: client}
 	}
 
 	u, err := url.Parse(storeURL)
@@ -57,41 +57,14 @@ func NewV1Client(storeURL string, username string, password string, client *http
 	return dc, nil
 }
 
-func (dc *DairyclientV1) executeRequest(req *http.Request) (*http.Response, error) {
+func (dc *V1Client) executeRequest(req *http.Request) (*http.Response, error) {
 	req.AddCookie(dc.AuthCookie)
 	return dc.Do(req)
 }
 
-////////////////////////////////////////////////////////
-//                                                    //
-//                 Helper Functions                   //
-//                                                    //
-////////////////////////////////////////////////////////
+func (dc *V1Client) BuildURL(queryParams map[string]string, parts ...string) (string, error) {
+	parts = append([]string{currentAPIVersion}, parts...)
 
-func mapToQueryValues(in map[string]string) url.Values {
-	out := url.Values{}
-	for k, v := range in {
-		out.Set(k, v)
-	}
-	return out
-}
-
-func (dc *DairyclientV1) buildURL(queryParams map[string]string, versioned bool, parts ...string) (string, error) {
-	if versioned {
-		parts = append([]string{currentAPIVersion}, parts...)
-	}
-
-	u, err := url.Parse(strings.Join(parts, "/"))
-	if err != nil {
-		return "", err
-	}
-
-	queryString := mapToQueryValues(queryParams)
-	u.RawQuery = queryString.Encode()
-	return dc.URL.ResolveReference(u).String(), nil
-}
-
-func (dc *DairyclientV1) buildVersionlessURL(queryParams map[string]string, parts ...string) (string, error) {
 	u, err := url.Parse(strings.Join(parts, "/"))
 	if err != nil {
 		return "", err
@@ -108,31 +81,46 @@ func (dc *DairyclientV1) buildVersionlessURL(queryParams map[string]string, part
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *DairyclientV1) createNewUser(JSONBody string, createAsSuperUser bool) (*http.Response, error) {
-	u, err := dc.buildURL(nil, false, "user")
+func (dc *V1Client) CreateUser(JSONBody string, createAsSuperUser bool) (*User, error) {
+	u, err := dc.BuildURL(nil, "user")
 	if err != nil {
 		return nil, err
 	}
 
 	body := strings.NewReader(JSONBody)
 	req, _ := http.NewRequest(http.MethodPost, u, body)
-	if createAsSuperUser {
-		return dc.executeRequest(req)
-	}
-	return dc.executeRequest(req)
-}
 
-func (dc *DairyclientV1) deleteUser(userID string, deleteAsSuperUser bool) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "user", userID)
+	res, err := dc.executeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	req, _ := http.NewRequest(http.MethodDelete, u, nil)
-	if deleteAsSuperUser {
-		return dc.executeRequest(req)
+	ru := User{}
+	err = unmarshalBody(res.Body, ru)
+	if err != nil {
+		return nil, err
 	}
-	return dc.executeRequest(req)
+
+	return &ru, nil
+}
+
+func (dc *V1Client) DeleteUser(userID uint64) error {
+	userIDString := convertIDToString(userID)
+	u, err := dc.BuildURL(nil, "user", userIDString)
+	if err != nil {
+		return err
+	}
+
+	req, _ := http.NewRequest(http.MethodDelete, u, nil)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return errors.New(fmt.Sprintf("user couldn't be deleted, status returned: %d", res.StatusCode))
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////
@@ -141,18 +129,47 @@ func (dc *DairyclientV1) deleteUser(userID string, deleteAsSuperUser bool) (*htt
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *DairyclientV1) CheckProductExistence(sku string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product", sku)
+func (dc *V1Client) ProductExists(sku string) (bool, error) {
+	u, err := dc.BuildURL(nil, "product", sku)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	req, _ := http.NewRequest(http.MethodHead, u, nil)
-	return dc.executeRequest(req)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return false, err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		return true, nil
+	}
+	return false, nil
 }
 
-func (dc *DairyclientV1) retrieveProduct(sku string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product", sku)
+func (dc *V1Client) GetProduct(sku string) (*Product, error) {
+	u, err := dc.BuildURL(nil, "product", sku)
+	if err != nil {
+		return nil, err
+	}
+
+	req, _ := http.NewRequest(http.MethodGet, u, nil)
+
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	p := Product{}
+	err = unmarshalBody(res.Body, p)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (dc *V1Client) GetProducts(queryFilter map[string]string) (*http.Response, error) {
+	u, err := dc.BuildURL(queryFilter, "products")
 	if err != nil {
 		return nil, err
 	}
@@ -161,19 +178,13 @@ func (dc *DairyclientV1) retrieveProduct(sku string) (*http.Response, error) {
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) retrieveListOfProducts(queryFilter map[string]string) (*http.Response, error) {
-	u, err := dc.buildURL(queryFilter, true, "products")
+func (dc *V1Client) CreateProduct(np ProductCreationInput) (*http.Response, error) {
+	body, err := createBodyFromStruct(np)
 	if err != nil {
 		return nil, err
 	}
 
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	return dc.executeRequest(req)
-}
-
-func (dc *DairyclientV1) createProduct(JSONBody string) (*http.Response, error) {
-	body := strings.NewReader(JSONBody)
-	u, err := dc.buildURL(nil, true, "product")
+	u, err := dc.BuildURL(nil, "product")
 	if err != nil {
 		return nil, err
 	}
@@ -182,9 +193,13 @@ func (dc *DairyclientV1) createProduct(JSONBody string) (*http.Response, error) 
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) updateProduct(sku string, JSONBody string) (*http.Response, error) {
-	body := strings.NewReader(JSONBody)
-	u, err := dc.buildURL(nil, true, "product", sku)
+func (dc *V1Client) UpdateProduct(sku string, up ProductUpdateInput) (*http.Response, error) {
+	body, err := createBodyFromStruct(up)
+	if err != nil {
+		return nil, err
+	}
+
+	u, err := dc.BuildURL(nil, "product", sku)
 	if err != nil {
 		return nil, err
 	}
@@ -193,8 +208,8 @@ func (dc *DairyclientV1) updateProduct(sku string, JSONBody string) (*http.Respo
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) deleteProduct(sku string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product", sku)
+func (dc *V1Client) DeleteProduct(sku string) (*http.Response, error) {
+	u, err := dc.BuildURL(nil, "product", sku)
 	if err != nil {
 		return nil, err
 	}
@@ -209,8 +224,9 @@ func (dc *DairyclientV1) deleteProduct(sku string) (*http.Response, error) {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *DairyclientV1) retrieveProductRoot(rootID string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product_root", rootID)
+func (dc *V1Client) GetProductRoot(rootID uint64) (*http.Response, error) {
+	rootIDString := convertIDToString(rootID)
+	u, err := dc.BuildURL(nil, "product_root", rootIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +235,8 @@ func (dc *DairyclientV1) retrieveProductRoot(rootID string) (*http.Response, err
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) retrieveProductRoots(queryFilter map[string]string) (*http.Response, error) {
-	u, err := dc.buildURL(queryFilter, true, "product_roots")
+func (dc *V1Client) GetProductRoots(queryFilter map[string]string) (*http.Response, error) {
+	u, err := dc.BuildURL(queryFilter, "product_roots")
 	if err != nil {
 		return nil, err
 	}
@@ -229,8 +245,9 @@ func (dc *DairyclientV1) retrieveProductRoots(queryFilter map[string]string) (*h
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) deleteProductRoot(rootID string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product_root", rootID)
+func (dc *V1Client) DeleteProductRoot(rootID uint64) (*http.Response, error) {
+	rootIDString := convertIDToString(rootID)
+	u, err := dc.BuildURL(nil, "product_root", rootIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -245,8 +262,9 @@ func (dc *DairyclientV1) deleteProductRoot(rootID string) (*http.Response, error
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *DairyclientV1) retrieveProductOptions(productID string, queryFilter map[string]string) (*http.Response, error) {
-	u, err := dc.buildURL(queryFilter, true, "product", productID, "options")
+func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) (*http.Response, error) {
+	productIDString := convertIDToString(productID)
+	u, err := dc.BuildURL(queryFilter, "product", productIDString, "options")
 	if err != nil {
 		return nil, err
 	}
@@ -255,9 +273,10 @@ func (dc *DairyclientV1) retrieveProductOptions(productID string, queryFilter ma
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) createProductOptionForProduct(productID string, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) CreateProductOptionForProduct(productID uint64, JSONBody string) (*http.Response, error) {
+	productIDString := convertIDToString(productID)
 	body := strings.NewReader(JSONBody)
-	u, err := dc.buildURL(nil, true, "product", productID, "options")
+	u, err := dc.BuildURL(nil, "product", productIDString, "options")
 	if err != nil {
 		return nil, err
 	}
@@ -266,9 +285,10 @@ func (dc *DairyclientV1) createProductOptionForProduct(productID string, JSONBod
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) updateProductOption(optionID string, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) UpdateProductOption(optionID uint64, JSONBody string) (*http.Response, error) {
+	optionIDString := convertIDToString(optionID)
 	body := strings.NewReader(JSONBody)
-	u, err := dc.buildURL(nil, true, "product_options", optionID)
+	u, err := dc.BuildURL(nil, "product_options", optionIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -277,8 +297,9 @@ func (dc *DairyclientV1) updateProductOption(optionID string, JSONBody string) (
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) deleteProductOption(optionID string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product_options", optionID)
+func (dc *V1Client) DeleteProductOption(optionID uint64) (*http.Response, error) {
+	optionIDString := convertIDToString(optionID)
+	u, err := dc.BuildURL(nil, "product_options", optionIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -293,9 +314,10 @@ func (dc *DairyclientV1) deleteProductOption(optionID string) (*http.Response, e
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *DairyclientV1) createProductOptionValueForOption(optionID string, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) createProductOptionValueForOption(optionID uint64, JSONBody string) (*http.Response, error) {
+	optionIDString := convertIDToString(optionID)
 	body := strings.NewReader(JSONBody)
-	u, err := dc.buildURL(nil, true, "product_options", optionID, "value")
+	u, err := dc.BuildURL(nil, "product_options", optionIDString, "value")
 	if err != nil {
 		return nil, err
 	}
@@ -304,9 +326,10 @@ func (dc *DairyclientV1) createProductOptionValueForOption(optionID string, JSON
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) updateProductOptionValueForOption(valueID string, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) updateProductOptionValueForOption(valueID uint64, JSONBody string) (*http.Response, error) {
+	valueIDString := convertIDToString(valueID)
 	body := strings.NewReader(JSONBody)
-	u, err := dc.buildURL(nil, true, "product_option_values", valueID)
+	u, err := dc.BuildURL(nil, "product_option_values", valueIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -315,8 +338,9 @@ func (dc *DairyclientV1) updateProductOptionValueForOption(valueID string, JSONB
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) deleteProductOptionValueForOption(optionID string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "product_option_values", optionID)
+func (dc *V1Client) deleteProductOptionValueForOption(optionID uint64) (*http.Response, error) {
+	optionIDString := convertIDToString(optionID)
+	u, err := dc.BuildURL(nil, "product_option_values", optionIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -331,8 +355,9 @@ func (dc *DairyclientV1) deleteProductOptionValueForOption(optionID string) (*ht
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *DairyclientV1) getDiscountByID(discountID string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "discount", discountID)
+func (dc *V1Client) getDiscountByID(discountID uint64) (*http.Response, error) {
+	discountIDString := convertIDToString(discountID)
+	u, err := dc.BuildURL(nil, "discount", discountIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -341,8 +366,8 @@ func (dc *DairyclientV1) getDiscountByID(discountID string) (*http.Response, err
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) getListOfDiscounts(queryFilter map[string]string) (*http.Response, error) {
-	u, err := dc.buildURL(queryFilter, true, "discounts")
+func (dc *V1Client) getListOfDiscounts(queryFilter map[string]string) (*http.Response, error) {
+	u, err := dc.BuildURL(queryFilter, "discounts")
 	if err != nil {
 		return nil, err
 	}
@@ -351,8 +376,8 @@ func (dc *DairyclientV1) getListOfDiscounts(queryFilter map[string]string) (*htt
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) createDiscount(JSONBody string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "discount")
+func (dc *V1Client) createDiscount(JSONBody string) (*http.Response, error) {
+	u, err := dc.BuildURL(nil, "discount")
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +387,9 @@ func (dc *DairyclientV1) createDiscount(JSONBody string) (*http.Response, error)
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) updateDiscount(discountID string, JSONBody string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "discount", discountID)
+func (dc *V1Client) updateDiscount(discountID uint64, JSONBody string) (*http.Response, error) {
+	discountIDString := convertIDToString(discountID)
+	u, err := dc.BuildURL(nil, "discount", discountIDString)
 	if err != nil {
 		return nil, err
 	}
@@ -373,8 +399,9 @@ func (dc *DairyclientV1) updateDiscount(discountID string, JSONBody string) (*ht
 	return dc.executeRequest(req)
 }
 
-func (dc *DairyclientV1) deleteDiscount(discountID string) (*http.Response, error) {
-	u, err := dc.buildURL(nil, true, "discount", discountID)
+func (dc *V1Client) deleteDiscount(discountID uint64) (*http.Response, error) {
+	discountIDString := convertIDToString(discountID)
+	u, err := dc.BuildURL(nil, "discount", discountIDString)
 	if err != nil {
 		return nil, err
 	}
