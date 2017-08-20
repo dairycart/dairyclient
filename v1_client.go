@@ -93,22 +93,19 @@ func (dc *V1Client) BuildURL(queryParams map[string]string, parts ...string) (st
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) CreateUser(JSONBody string, createAsSuperUser bool) (*User, error) {
-	u, err := dc.BuildURL(nil, "user")
-	if err != nil {
-		return nil, err
-	}
+// CreateUser takes a UserCreationInput and creates the user in Dairycart
+func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
+	u, _ := dc.BuildURL(nil, "user")
+	body, _ := createBodyFromStruct(nu)
 
-	body := strings.NewReader(JSONBody)
 	req, _ := http.NewRequest(http.MethodPost, u, body)
-
 	res, err := dc.executeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
 	ru := User{}
-	err = unmarshalBody(res.Body, ru)
+	err = unmarshalBody(res, ru)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +113,7 @@ func (dc *V1Client) CreateUser(JSONBody string, createAsSuperUser bool) (*User, 
 	return &ru, nil
 }
 
+// DeleteUser deletes a user with a given ID
 func (dc *V1Client) DeleteUser(userID uint64) error {
 	userIDString := convertIDToString(userID)
 	u, err := dc.BuildURL(nil, "user", userIDString)
@@ -130,7 +128,7 @@ func (dc *V1Client) DeleteUser(userID uint64) error {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("user couldn't be deleted, status returned: %d", res.StatusCode))
+		return fmt.Errorf("user couldn't be deleted, status returned: %d", res.StatusCode)
 	}
 	return nil
 }
@@ -164,7 +162,7 @@ func (dc *V1Client) GetProduct(sku string) (*Product, error) {
 	}
 
 	p := Product{}
-	err = unmarshalBody(res.Body, p)
+	err = unmarshalBody(res, p)
 	if err != nil {
 		return nil, err
 	}

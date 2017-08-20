@@ -1,11 +1,13 @@
 package dairyclient
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"math"
+	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,9 @@ type testNormalStruct struct {
 }
 
 func TestUnmarshalBody(t *testing.T) {
-	exampleInput := strings.NewReader(`{"thing":"something"}`)
+	exampleInput := &http.Response{
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{"thing":"something"}`)),
+	}
 
 	expected := testNormalStruct{Thing: "something"}
 	actual := testNormalStruct{}
@@ -46,13 +50,18 @@ func (ft testFailReader) Read([]byte) (int, error) {
 }
 
 func TestUnmarshalBodyFailsReadingAllFromInputReader(t *testing.T) {
-	exampleFailureInput := testFailReader{}
+	exampleFailureInput := &http.Response{
+		Body: ioutil.NopCloser(testFailReader{}),
+	}
+
 	err := unmarshalBody(exampleFailureInput, nil)
 	assert.NotNil(t, err)
 }
 
 func TestUnmarshalBodyFailsWithInvalidStruct(t *testing.T) {
-	exampleInput := strings.NewReader(`{"invalid_lol}`)
+	exampleInput := &http.Response{
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{"invalid_lol}`)),
+	}
 
 	actual := testNormalStruct{}
 	err := unmarshalBody(exampleInput, &actual)

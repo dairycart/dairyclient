@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strconv"
 )
@@ -23,8 +24,8 @@ func mapToQueryValues(in map[string]string) url.Values {
 	return out
 }
 
-func unmarshalBody(body io.Reader, dest interface{}) error {
-	bodyBytes, err := ioutil.ReadAll(body)
+func unmarshalBody(res *http.Response, dest interface{}) error {
+	bodyBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
