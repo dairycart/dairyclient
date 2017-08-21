@@ -16,6 +16,8 @@ const (
 	exampleURL      = `http://www.dairycart.com`
 	exampleUsername = `username`
 	examplePassword = `password` // lol not really
+	exampleSKU      = `sku`
+	exampleBadJSON  = `{"invalid lol}`
 )
 
 ////////////////////////////////////////////////////////

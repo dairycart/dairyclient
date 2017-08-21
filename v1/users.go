@@ -13,7 +13,7 @@ import (
 
 // CreateUser takes a UserCreationInput and creates the user in Dairycart
 func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
-	u, _ := dc.BuildURL(nil, "user")
+	u := dc.buildURL(nil, "user")
 	body, _ := createBodyFromStruct(nu)
 
 	req, _ := http.NewRequest(http.MethodPost, u, body)
@@ -34,7 +34,7 @@ func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
 // DeleteUser deletes a user with a given ID
 func (dc *V1Client) DeleteUser(userID uint64) error {
 	userIDString := convertIDToString(userID)
-	u, _ := dc.BuildURL(nil, "user", userIDString)
+	u := dc.buildURL(nil, "user", userIDString)
 
 	req, _ := http.NewRequest(http.MethodDelete, u, nil)
 	res, err := dc.executeRequest(req)
