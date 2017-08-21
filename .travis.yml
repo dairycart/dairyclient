@@ -12,7 +12,7 @@ before_install:
   # install goveralls
   - go get github.com/mattn/goveralls
   # build test image
-  - docker build -t tests -f v1/test.Dockerfile .
+  - docker build -t tests -f v1/test.Dockerfile v1
 
 script:
   # unit tests
