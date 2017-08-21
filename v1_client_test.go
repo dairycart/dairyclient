@@ -201,15 +201,14 @@ func TestCreateUser(t *testing.T) {
 		LastName:  "Last",
 		Email:     "email@address.com",
 	}
-	_, err := c.CreateUser(exampleInput)
-
-	// actual, err := c.CreateUser(exampleInput)
-	// expected := &dairyclient.User{
-	// 	FirstName: "First",
-	// 	LastName:  "Last",
-	// 	Email:     "email@address.com",
-	// }
-	// assert.Equal(t, expected, actual, "expected response did not match actual response.")
+	actual, err := c.CreateUser(exampleInput)
+	expected := &dairyclient.User{
+		DBRow:     dairyclient.DBRow{ID: 1},
+		FirstName: "First",
+		LastName:  "Last",
+		Email:     "email@address.com",
+	}
+	assert.Equal(t, expected, actual, "expected response did not match actual response.")
 
 	assert.Nil(t, err)
 	assert.True(t, endpointCalled)

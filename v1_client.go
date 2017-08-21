@@ -105,7 +105,7 @@ func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
 	}
 
 	ru := User{}
-	err = unmarshalBody(res, ru)
+	err = unmarshalBody(res, &ru)
 	if err != nil {
 		return nil, err
 	}

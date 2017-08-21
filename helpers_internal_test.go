@@ -49,12 +49,34 @@ func (ft testFailReader) Read([]byte) (int, error) {
 	return 0, errors.New("pineapple on pizza")
 }
 
-func TestUnmarshalBodyFailsReadingAllFromInputReader(t *testing.T) {
+func TestUnmarshalBodyFailsWhenItReceivesNil(t *testing.T) {
 	exampleFailureInput := &http.Response{
 		Body: ioutil.NopCloser(testFailReader{}),
 	}
 
 	err := unmarshalBody(exampleFailureInput, nil)
+	assert.NotNil(t, err)
+	expected := errors.New("unmarshalBody cannot accept nil values")
+	assert.Equal(t, expected, err, "expected error string %s")
+}
+
+func TestUnmarshalBodyFailsWhenItReceivesANonPointer(t *testing.T) {
+	exampleFailureInput := &http.Response{
+		Body: ioutil.NopCloser(testFailReader{}),
+	}
+
+	err := unmarshalBody(exampleFailureInput, testNormalStruct{})
+	assert.NotNil(t, err)
+	expected := errors.New("unmarshalBody can only accept pointers")
+	assert.Equal(t, expected, err, "expected error string %s")
+}
+
+func TestUnmarshalBodyReturnsReadAllError(t *testing.T) {
+	exampleFailureInput := &http.Response{
+		Body: ioutil.NopCloser(testFailReader{}),
+	}
+
+	err := unmarshalBody(exampleFailureInput, &testNormalStruct{})
 	assert.NotNil(t, err)
 }
 
