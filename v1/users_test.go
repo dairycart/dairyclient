@@ -108,3 +108,55 @@ func TestCreateUserReturnsErrorWhenReceivingABadResponse(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.True(t, endpointCalled)
 }
+
+func TestDeleteUser(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+
+	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
+		fmt.Sprintf("/v1/user/%d", exampleID): func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.True(t, req.Method == http.MethodDelete)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	err := c.DeleteUser(exampleID)
+	assert.Nil(t, err)
+	assert.True(t, endpointCalled)
+}
+
+func TestDeleteUserWhenErrorEncounteredExecutingRequest(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	c := buildTestClient(t, ts)
+	ts.Close()
+
+	err := c.DeleteUser(exampleID)
+	assert.NotNil(t, err)
+}
+
+func TestDeleteUserWhenResponseContainsError(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+
+	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
+		fmt.Sprintf("/v1/user/%d", exampleID): func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.True(t, req.Method == http.MethodDelete)
+			res.WriteHeader(http.StatusNotFound)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	err := c.DeleteUser(exampleID)
+	assert.NotNil(t, err)
+	assert.True(t, endpointCalled)
+}

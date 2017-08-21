@@ -34,10 +34,7 @@ func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
 // DeleteUser deletes a user with a given ID
 func (dc *V1Client) DeleteUser(userID uint64) error {
 	userIDString := convertIDToString(userID)
-	u, err := dc.BuildURL(nil, "user", userIDString)
-	if err != nil {
-		return err
-	}
+	u, _ := dc.BuildURL(nil, "user", userIDString)
 
 	req, _ := http.NewRequest(http.MethodDelete, u, nil)
 	res, err := dc.executeRequest(req)
