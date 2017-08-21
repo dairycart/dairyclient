@@ -42,5 +42,5 @@ func (dc *V1Client) UpdateDiscount(discountID uint64, JSONBody string) (*http.Re
 func (dc *V1Client) DeleteDiscount(discountID uint64) error {
 	discountIDString := convertIDToString(discountID)
 	u := dc.buildURL(nil, "discount", discountIDString)
-	return dc.Delete(u)
+	return dc.delete(u)
 }

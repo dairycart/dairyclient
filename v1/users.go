@@ -34,5 +34,5 @@ func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
 func (dc *V1Client) DeleteUser(userID uint64) error {
 	userIDString := convertIDToString(userID)
 	u := dc.buildURL(nil, "user", userIDString)
-	return dc.Delete(u)
+	return dc.delete(u)
 }

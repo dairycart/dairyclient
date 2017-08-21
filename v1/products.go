@@ -103,7 +103,7 @@ func (dc *V1Client) UpdateProduct(sku string, up ProductUpdateInput) (*Product, 
 func (dc *V1Client) DeleteProduct(sku string) error {
 	u := dc.buildURL(nil, "product", sku)
 	req, _ := http.NewRequest(http.MethodDelete, u, nil)
-	return dc.Delete(u)
+	return dc.delete(u)
 }
 
 ////////////////////////////////////////////////////////
@@ -138,7 +138,7 @@ func (dc *V1Client) GetProductRoots(queryFilter map[string]string) (*http.Respon
 func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
 	rootIDString := convertIDToString(rootID)
 	u := dc.buildURL(nil, "product_root", rootIDString)
-	return dc.Delete(u)
+	return dc.delete(u)
 }
 
 ////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ func (dc *V1Client) UpdateProductOption(optionID uint64, JSONBody string) (*http
 func (dc *V1Client) DeleteProductOption(optionID uint64) error {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_options", optionIDString)
-	return dc.Delete(u)
+	return dc.delete(u)
 }
 
 ////////////////////////////////////////////////////////
@@ -201,5 +201,5 @@ func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, JSONBody s
 func (dc *V1Client) DeleteProductOptionValueForOption(optionID uint64) error {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_option_values", optionIDString)
-	return dc.Delete(u)
+	return dc.delete(u)
 }

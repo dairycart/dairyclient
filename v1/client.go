@@ -85,7 +85,7 @@ func (dc *V1Client) BuildURL(queryParams map[string]string, parts ...string) (st
 	return dc.URL.ResolveReference(u).String(), nil
 }
 
-func (dc *V1Client) Delete(uri string) error {
+func (dc *V1Client) delete(uri string) error {
 	req, _ := http.NewRequest(http.MethodDelete, uri, nil)
 	res, err := dc.executeRequest(req)
 	if err != nil {
