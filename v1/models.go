@@ -21,10 +21,9 @@ type DBRow struct {
 // ListResponse is a generic list response struct containing values that represent
 // pagination, meant to be embedded into other object response structs
 type ListResponse struct {
-	Count uint64      `json:"count"`
-	Limit uint8       `json:"limit"`
-	Page  uint64      `json:"page"`
-	Data  interface{} `json:"data"`
+	Count uint64 `json:"count"`
+	Limit uint8  `json:"limit"`
+	Page  uint64 `json:"page"`
 }
 
 // ErrorResponse is a handy struct we can respond with in the event we have an error to report
@@ -225,6 +224,11 @@ type ProductUpdateInput struct {
 	QuantityPerPackage uint32  `json:"quantity_per_package"`
 
 	AvailableOn time.Time `json:"available_on"`
+}
+
+type ProductList struct {
+	ListResponse
+	Data []Product `json:"data"`
 }
 
 ////////////////////////////////////////////////////////

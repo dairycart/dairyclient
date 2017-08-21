@@ -84,3 +84,16 @@ func (dc *V1Client) BuildURL(queryParams map[string]string, parts ...string) (st
 	u.RawQuery = queryString.Encode()
 	return dc.URL.ResolveReference(u).String(), nil
 }
+
+func (dc *V1Client) Delete(uri string) error {
+	req, _ := http.NewRequest(http.MethodDelete, uri, nil)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("user couldn't be deleted, status returned: %d", res.StatusCode)
+	}
+	return nil
+}

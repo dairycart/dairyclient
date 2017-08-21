@@ -1,7 +1,6 @@
 package dairyclient
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -35,15 +34,5 @@ func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
 func (dc *V1Client) DeleteUser(userID uint64) error {
 	userIDString := convertIDToString(userID)
 	u := dc.buildURL(nil, "user", userIDString)
-
-	req, _ := http.NewRequest(http.MethodDelete, u, nil)
-	res, err := dc.executeRequest(req)
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("user couldn't be deleted, status returned: %d", res.StatusCode)
-	}
-	return nil
+	return dc.Delete(u)
 }
