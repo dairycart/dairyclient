@@ -7,10 +7,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dairycart/dairyclient"
+	"github.com/dairycart/dairyclient/v1"
 )
 
 const (
@@ -72,6 +71,7 @@ func handlerGenerator(handlers map[string]func(w http.ResponseWriter, r *http.Re
 ////////////////////////////////////////////////////////
 
 func TestV1ClientConstructor(t *testing.T) {
+	t.Parallel()
 	ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
 	defer ts.Close()
 
@@ -82,6 +82,7 @@ func TestV1ClientConstructor(t *testing.T) {
 }
 
 func TestV1ClientConstructorReturnsErrorWithInvalidURL(t *testing.T) {
+	t.Parallel()
 	c, err := dairyclient.NewV1Client(":", exampleUsername, examplePassword, nil)
 
 	assert.Nil(t, c)
@@ -89,6 +90,7 @@ func TestV1ClientConstructorReturnsErrorWithInvalidURL(t *testing.T) {
 }
 
 func TestV1ClientConstructorWithFailureToLogin(t *testing.T) {
+	t.Parallel()
 	ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
 	ts.Close()
 
@@ -99,6 +101,7 @@ func TestV1ClientConstructorWithFailureToLogin(t *testing.T) {
 }
 
 func TestV1ClientConstructorWhereLoginCookieIsNotReturned(t *testing.T) {
+	t.Parallel()
 	ts := httptest.NewTLSServer(obligatoryLoginHandler(false))
 	defer ts.Close()
 
@@ -109,6 +112,7 @@ func TestV1ClientConstructorWhereLoginCookieIsNotReturned(t *testing.T) {
 }
 
 func TestDairyClientAddsCookieToRequest(t *testing.T) {
+	t.Parallel()
 	var endpointCalled bool
 	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
 		"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
@@ -140,6 +144,7 @@ func TestDairyClientAddsCookieToRequest(t *testing.T) {
 }
 
 func TestBuildURL(t *testing.T) {
+	t.Parallel()
 	ts := httptest.NewServer(http.NotFoundHandler())
 	defer ts.Close()
 	c := buildTestClient(t, ts)
@@ -155,6 +160,7 @@ func TestBuildURL(t *testing.T) {
 }
 
 func TestBuildURLReturnsErrorWhenFailingToParseURLParts(t *testing.T) {
+	t.Parallel()
 	ts := httptest.NewServer(http.NotFoundHandler())
 	defer ts.Close()
 	c := buildTestClient(t, ts)
@@ -163,103 +169,4 @@ func TestBuildURLReturnsErrorWhenFailingToParseURLParts(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Empty(t, actual)
-}
-
-////////////////////////////////////////////////////////
-//                                                    //
-//               Auth Functions Tests                 //
-//                                                    //
-////////////////////////////////////////////////////////
-
-func TestCreateUser(t *testing.T) {
-	var endpointCalled bool
-
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		"/v1/user": func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-
-			response := `
-				{
-					"id": 1,
-					"first_name": "First",
-					"last_name": "Last",
-					"email": "email@address.com",
-					"is_admin": false
-				}
-			`
-
-			fmt.Fprintf(res, response)
-		},
-	}
-
-	ts := httptest.NewServer(handlerGenerator(handlers))
-	defer ts.Close()
-	c := buildTestClient(t, ts)
-
-	exampleInput := dairyclient.UserCreationInput{
-		FirstName: "First",
-		LastName:  "Last",
-		Email:     "email@address.com",
-	}
-	actual, err := c.CreateUser(exampleInput)
-	expected := &dairyclient.User{
-		DBRow:     dairyclient.DBRow{ID: 1},
-		FirstName: "First",
-		LastName:  "Last",
-		Email:     "email@address.com",
-	}
-	assert.Equal(t, expected, actual, "expected response did not match actual response.")
-
-	assert.Nil(t, err)
-	assert.True(t, endpointCalled)
-}
-
-func TestCreateUserReturnsErrorWhenFailingToExecuteRequest(t *testing.T) {
-	ts := httptest.NewServer(http.NotFoundHandler())
-	defer ts.Close()
-	c := buildTestClient(t, ts)
-	c.Client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return errors.New("arbitrary error")
-	}
-
-	exampleInput := dairyclient.UserCreationInput{
-		FirstName: "First",
-		LastName:  "Last",
-		Email:     "email@address.com",
-	}
-	_, err := c.CreateUser(exampleInput)
-
-	// FIXME: I'm not actually testing what I should be testing. :(
-	// fmt.Println(err)
-	assert.NotNil(t, err)
-}
-
-func TestCreateUserReturnsErrorWhenReceivingABadResponse(t *testing.T) {
-	var endpointCalled bool
-
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		"/v1/user": func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			badResponse := `
-				{
-					"id": 1,
-				}
-			`
-			fmt.Fprintf(res, badResponse)
-		},
-	}
-
-	ts := httptest.NewServer(handlerGenerator(handlers))
-	defer ts.Close()
-	c := buildTestClient(t, ts)
-
-	exampleInput := dairyclient.UserCreationInput{
-		FirstName: "First",
-		LastName:  "Last",
-		Email:     "email@address.com",
-	}
-	_, err := c.CreateUser(exampleInput)
-
-	assert.NotNil(t, err)
-	assert.True(t, endpointCalled)
 }

@@ -14,6 +14,7 @@ import (
 )
 
 func TestMapToQueryValues(t *testing.T) {
+	t.Parallel()
 	exampleQueryParams := map[string]string{
 		"param": "value",
 	}
@@ -31,6 +32,7 @@ type testNormalStruct struct {
 }
 
 func TestUnmarshalBody(t *testing.T) {
+	t.Parallel()
 	exampleInput := &http.Response{
 		Body: ioutil.NopCloser(bytes.NewBufferString(`{"thing":"something"}`)),
 	}
@@ -50,6 +52,7 @@ func (ft testFailReader) Read([]byte) (int, error) {
 }
 
 func TestUnmarshalBodyFailsWhenItReceivesNil(t *testing.T) {
+	t.Parallel()
 	exampleFailureInput := &http.Response{
 		Body: ioutil.NopCloser(testFailReader{}),
 	}
@@ -61,6 +64,7 @@ func TestUnmarshalBodyFailsWhenItReceivesNil(t *testing.T) {
 }
 
 func TestUnmarshalBodyFailsWhenItReceivesANonPointer(t *testing.T) {
+	t.Parallel()
 	exampleFailureInput := &http.Response{
 		Body: ioutil.NopCloser(testFailReader{}),
 	}
@@ -72,6 +76,7 @@ func TestUnmarshalBodyFailsWhenItReceivesANonPointer(t *testing.T) {
 }
 
 func TestUnmarshalBodyReturnsReadAllError(t *testing.T) {
+	t.Parallel()
 	exampleFailureInput := &http.Response{
 		Body: ioutil.NopCloser(testFailReader{}),
 	}
@@ -81,6 +86,7 @@ func TestUnmarshalBodyReturnsReadAllError(t *testing.T) {
 }
 
 func TestUnmarshalBodyFailsWithInvalidStruct(t *testing.T) {
+	t.Parallel()
 	exampleInput := &http.Response{
 		Body: ioutil.NopCloser(bytes.NewBufferString(`{"invalid_lol}`)),
 	}
@@ -92,6 +98,7 @@ func TestUnmarshalBodyFailsWithInvalidStruct(t *testing.T) {
 }
 
 func TestConvertIDToString(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		input    uint64
 		expected string
@@ -117,6 +124,7 @@ func TestConvertIDToString(t *testing.T) {
 }
 
 func TestCreateBodyFromStruct(t *testing.T) {
+	t.Parallel()
 	in := testNormalStruct{Thing: "something"}
 	_, err := createBodyFromStruct(in)
 	assert.Nil(t, err)
@@ -127,6 +135,7 @@ type testBreakableStruct struct {
 }
 
 func TestCreateBodyFromStructReturnsErrorWithInvalidInput(t *testing.T) {
+	t.Parallel()
 	f := &testBreakableStruct{Thing: "dongs"}
 	_, err := createBodyFromStruct(f)
 	assert.NotNil(t, err)
