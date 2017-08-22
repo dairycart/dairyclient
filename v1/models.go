@@ -231,6 +231,11 @@ type ProductList struct {
 	Data []Product `json:"data"`
 }
 
+type ProductRootList struct {
+	ListResponse
+	Data []ProductRoot `json:"data"`
+}
+
 ////////////////////////////////////////////////////////
 //                                                    //
 //                  Product Options                   //

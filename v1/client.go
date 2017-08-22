@@ -85,6 +85,47 @@ func (dc *V1Client) BuildURL(queryParams map[string]string, parts ...string) (st
 	return dc.URL.ResolveReference(u).String(), nil
 }
 
+func (dc *V1Client) exists(uri string) (bool, error) {
+	req, _ := http.NewRequest(http.MethodHead, uri, nil)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return false, err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (dc *V1Client) get(uri string, obj interface{}) error {
+	req, _ := http.NewRequest(http.MethodGet, uri, nil)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return err
+	}
+
+	err = unmarshalBody(res, &obj)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dc *V1Client) getList(uri string, obj interface{}) error {
+	req, _ := http.NewRequest(http.MethodGet, uri, nil)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return err
+	}
+
+	err = unmarshalBody(res, &obj)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (dc *V1Client) delete(uri string) error {
 	req, _ := http.NewRequest(http.MethodDelete, uri, nil)
 	res, err := dc.executeRequest(req)
@@ -96,4 +137,31 @@ func (dc *V1Client) delete(uri string) error {
 		return fmt.Errorf("user couldn't be deleted, status returned: %d", res.StatusCode)
 	}
 	return nil
+}
+
+func (dc *V1Client) makeDataRequest(method string, uri string, in interface{}, out interface{}) error {
+	body, err := createBodyFromStruct(in)
+	if err != nil {
+		return err
+	}
+
+	req, _ := http.NewRequest(method, uri, body)
+	res, err := dc.executeRequest(req)
+	if err != nil {
+		return err
+	}
+
+	err = unmarshalBody(res, &out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dc *V1Client) post(uri string, in interface{}, out interface{}) error {
+	return dc.makeDataRequest(http.MethodPost, uri, in, out)
+}
+
+func (dc *V1Client) put(uri string, in interface{}, out interface{}) error {
+	return dc.makeDataRequest(http.MethodPatch, uri, in, out)
 }

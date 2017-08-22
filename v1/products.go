@@ -1,7 +1,6 @@
 package dairyclient
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -14,28 +13,14 @@ import (
 
 func (dc *V1Client) ProductExists(sku string) (bool, error) {
 	u := dc.buildURL(nil, "product", sku)
-	req, _ := http.NewRequest(http.MethodHead, u, nil)
-	res, err := dc.executeRequest(req)
-	if err != nil {
-		return false, err
-	}
-
-	if res.StatusCode == http.StatusOK {
-		return true, nil
-	}
-	return false, nil
+	return dc.exists(u)
 }
 
 func (dc *V1Client) GetProduct(sku string) (*Product, error) {
 	u := dc.buildURL(nil, "product", sku)
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	res, err := dc.executeRequest(req)
-	if err != nil {
-		return nil, err
-	}
-
 	p := Product{}
-	err = unmarshalBody(res, &p)
+
+	err := dc.get(u, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -44,65 +29,42 @@ func (dc *V1Client) GetProduct(sku string) (*Product, error) {
 
 func (dc *V1Client) GetProducts(queryFilter map[string]string) ([]Product, error) {
 	u := dc.buildURL(queryFilter, "products")
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	res, err := dc.executeRequest(req)
+	pl := ProductList{}
+
+	err := dc.get(u, &pl)
 	if err != nil {
 		return nil, err
 	}
 
-	p := ProductList{}
-	err = unmarshalBody(res, &p)
-	if err != nil {
-		return nil, err
-	}
-	return p.Data, nil
+	return pl.Data, nil
 }
 
 func (dc *V1Client) CreateProduct(np ProductCreationInput) (*Product, error) {
-	body, err := createBodyFromStruct(np)
-	if err != nil {
-		return nil, err
-	}
-
-	u := dc.buildURL(nil, "product")
-	req, _ := http.NewRequest(http.MethodPost, u, body)
-	res, err := dc.executeRequest(req)
-	if err != nil {
-		return nil, err
-	}
-
 	p := Product{}
-	err = unmarshalBody(res, &p)
+	u := dc.buildURL(nil, "product")
+
+	err := dc.post(u, np, &p)
 	if err != nil {
 		return nil, err
 	}
+
 	return &p, nil
 }
 
 func (dc *V1Client) UpdateProduct(sku string, up ProductUpdateInput) (*Product, error) {
-	body, err := createBodyFromStruct(up)
-	if err != nil {
-		return nil, err
-	}
-
-	u := dc.buildURL(nil, "product", sku)
-	req, _ := http.NewRequest(http.MethodPatch, u, body)
-	res, err := dc.executeRequest(req)
-	if err != nil {
-		return nil, err
-	}
-
 	p := Product{}
-	err = unmarshalBody(res, &p)
+	u := dc.buildURL(nil, "product", sku)
+
+	err := dc.put(u, up, &p)
 	if err != nil {
 		return nil, err
 	}
+
 	return &p, nil
 }
 
 func (dc *V1Client) DeleteProduct(sku string) error {
 	u := dc.buildURL(nil, "product", sku)
-	req, _ := http.NewRequest(http.MethodDelete, u, nil)
 	return dc.delete(u)
 }
 
@@ -115,24 +77,25 @@ func (dc *V1Client) DeleteProduct(sku string) error {
 func (dc *V1Client) GetProductRoot(rootID uint64) (*ProductRoot, error) {
 	rootIDString := convertIDToString(rootID)
 	u := dc.buildURL(nil, "product_root", rootIDString)
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	res, err := dc.executeRequest(req)
+
+	r := ProductRoot{}
+	err := dc.get(u, &r)
 	if err != nil {
 		return nil, err
 	}
 
-	r := ProductRoot{}
-	err = unmarshalBody(res, &r)
-	if err != nil {
-		return nil, err
-	}
 	return &r, nil
 }
 
-func (dc *V1Client) GetProductRoots(queryFilter map[string]string) (*http.Response, error) {
+func (dc *V1Client) GetProductRoots(queryFilter map[string]string) ([]ProductRoot, error) {
 	u := dc.buildURL(queryFilter, "product_roots")
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	return dc.executeRequest(req)
+	rl := ProductRootList{}
+	err := dc.get(u, &rl)
+	if err != nil {
+		return nil, err
+	}
+
+	return rl.Data, nil
 }
 
 func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
