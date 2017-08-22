@@ -19,25 +19,30 @@ import (
 
 func TestCreateUser(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
 
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		"/v1/user": func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodPost)
+	expectedBody := `
+		{
+			"first_name": "First",
+			"last_name": "Last",
+			"username": "",
+			"email": "email@address.com",
+			"password": "",
+			"is_admin": false
+		}
+	`
+	responseBody := `
+		{
+			"id": 1,
+			"first_name": "First",
+			"last_name": "Last",
+			"email": "email@address.com",
+			"is_admin": false
+		}
+	`
+	h := generatePostHandler(t, expectedBody, responseBody, http.StatusOK)
 
-			response := `
-				{
-					"id": 1,
-					"first_name": "First",
-					"last_name": "Last",
-					"email": "email@address.com",
-					"is_admin": false
-				}
-			`
-
-			fmt.Fprintf(res, response)
-		},
+	handlers := map[string]http.HandlerFunc{
+		"/v1/user": h,
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -59,7 +64,6 @@ func TestCreateUser(t *testing.T) {
 	assert.Equal(t, expected, actual, "expected response did not match actual response.")
 
 	assert.Nil(t, err)
-	assert.True(t, endpointCalled)
 }
 
 func TestCreateUserReturnsErrorWhenFailingToExecuteRequest(t *testing.T) {
@@ -80,19 +84,28 @@ func TestCreateUserReturnsErrorWhenFailingToExecuteRequest(t *testing.T) {
 
 func TestCreateUserReturnsErrorWhenReceivingABadResponse(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
-
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		"/v1/user": func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			badResponse := `
-				{
-					"id": 1,
-				}
-			`
-			fmt.Fprintf(res, badResponse)
-		},
-	}
+	expectedBody := `
+		{
+			"first_name": "First",
+			"last_name": "Last",
+			"username": "",
+			"email": "email@address.com",
+			"password": "",
+			"is_admin": false
+		}
+	`
+	badResponse := `
+		{
+			"id": 1,
+		}
+	`
+	handler := generatePostHandler(
+		t,
+		expectedBody,
+		badResponse,
+		http.StatusInternalServerError,
+	)
+	handlers := map[string]http.HandlerFunc{"/v1/user": handler}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
 	defer ts.Close()
@@ -106,18 +119,13 @@ func TestCreateUserReturnsErrorWhenReceivingABadResponse(t *testing.T) {
 	_, err := c.CreateUser(exampleInput)
 
 	assert.NotNil(t, err)
-	assert.True(t, endpointCalled)
 }
 
 func TestDeleteUser(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
 
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("/v1/user/%d", exampleID): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodDelete)
-		},
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/user/%d", exampleID): generateDeleteHandler(t, "", http.StatusOK),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -126,30 +134,13 @@ func TestDeleteUser(t *testing.T) {
 
 	err := c.DeleteUser(exampleID)
 	assert.Nil(t, err)
-	assert.True(t, endpointCalled)
-}
-
-func TestDeleteUserWhenErrorEncounteredExecutingRequest(t *testing.T) {
-	t.Parallel()
-
-	ts := httptest.NewServer(http.NotFoundHandler())
-	c := buildTestClient(t, ts)
-	ts.Close()
-
-	err := c.DeleteUser(exampleID)
-	assert.NotNil(t, err)
 }
 
 func TestDeleteUserWhenResponseContainsError(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
 
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("/v1/user/%d", exampleID): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodDelete)
-			res.WriteHeader(http.StatusNotFound)
-		},
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/user/%d", exampleID): generateDeleteHandler(t, "", http.StatusNotFound),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -158,5 +149,4 @@ func TestDeleteUserWhenResponseContainsError(t *testing.T) {
 
 	err := c.DeleteUser(exampleID)
 	assert.NotNil(t, err)
-	assert.True(t, endpointCalled)
 }

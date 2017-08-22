@@ -13,13 +13,9 @@ import (
 
 func TestProductExists(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
 
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("/v1/product/%s", exampleSKU): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodHead)
-		},
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%s", exampleSKU): generateHeadHandler(t, http.StatusOK),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -30,19 +26,13 @@ func TestProductExists(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.True(t, exists)
-	assert.True(t, endpointCalled)
 }
 
 func TestProductExistsReturnsFalseOn404(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
 
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("/v1/product/%s", exampleSKU): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodHead)
-			res.WriteHeader(http.StatusNotFound)
-		},
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%s", exampleSKU): generateHeadHandler(t, http.StatusNotFound),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -53,59 +43,41 @@ func TestProductExistsReturnsFalseOn404(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.False(t, exists)
-	assert.True(t, endpointCalled)
-}
-
-func TestProductExistsReturnsErrorWhenExecutingRequestFails(t *testing.T) {
-	t.Parallel()
-	ts := httptest.NewServer(http.NotFoundHandler())
-	c := buildTestClient(t, ts)
-	ts.Close()
-
-	exists, err := c.ProductExists(exampleSKU)
-
-	assert.NotNil(t, err)
-	assert.False(t, exists)
 }
 
 func TestGetProduct(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
 
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("/v1/product/%s", exampleSKU): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodGet)
+	exampleResponse := fmt.Sprintf(`
+		{
+			"name": "Your Favorite Band's T-Shirt",
+			"subtitle": "A t-shirt you can wear",
+			"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+			"option_summary": "Size: Small, Color: Red",
+			"sku": "%s",
+			"upc": "",
+			"manufacturer": "Record Company",
+			"brand": "Your Favorite Band",
+			"quantity": 666,
+			"quantity_per_package": 1,
+			"taxable": true,
+			"price": 20,
+			"on_sale": false,
+			"sale_price": 0,
+			"cost": 10,
+			"product_weight": 1,
+			"product_height": 5,
+			"product_width": 5,
+			"product_length": 5,
+			"package_weight": 1,
+			"package_height": 5,
+			"package_width": 5,
+			"package_length": 5
+		}
+	`, exampleSKU)
 
-			exampleResponse := fmt.Sprintf(`
-				{
-					"name": "Your Favorite Band's T-Shirt",
-					"subtitle": "A t-shirt you can wear",
-					"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-					"option_summary": "Size: Small, Color: Red",
-					"sku": "%s",
-					"upc": "",
-					"manufacturer": "Record Company",
-					"brand": "Your Favorite Band",
-					"quantity": 666,
-					"quantity_per_package": 1,
-					"taxable": true,
-					"price": 20,
-					"on_sale": false,
-					"sale_price": 0,
-					"cost": 10,
-					"product_weight": 1,
-					"product_height": 5,
-					"product_width": 5,
-					"product_length": 5,
-					"package_weight": 1,
-					"package_height": 5,
-					"package_width": 5,
-					"package_length": 5
-				}
-			`, exampleSKU)
-			fmt.Fprintf(res, exampleResponse)
-		},
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%s", exampleSKU): generateGetHandler(t, exampleResponse, http.StatusOK),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -139,7 +111,6 @@ func TestGetProduct(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, expected, actual, "expected product doesn't match actual product")
-	assert.True(t, endpointCalled)
 }
 
 func TestGetProductReturnsErrorWhenExecutingRequestFails(t *testing.T) {
@@ -156,15 +127,8 @@ func TestGetProductReturnsErrorWhenExecutingRequestFails(t *testing.T) {
 
 func TestGetProductReturnsErrorWhenReceivingBadJSON(t *testing.T) {
 	t.Parallel()
-	var endpointCalled bool
-
-	handlers := map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("/v1/product/%s", exampleSKU): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			assert.True(t, req.Method == http.MethodGet)
-
-			fmt.Fprintf(res, exampleBadJSON)
-		},
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%s", exampleSKU): generateGetHandler(t, exampleBadJSON, http.StatusOK),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
@@ -174,5 +138,4 @@ func TestGetProductReturnsErrorWhenReceivingBadJSON(t *testing.T) {
 	_, err := c.GetProduct(exampleSKU)
 
 	assert.NotNil(t, err)
-	assert.True(t, endpointCalled)
 }

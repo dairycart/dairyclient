@@ -3,4 +3,4 @@ WORKDIR /go/src/github.com/dairycart/dairyclient/v1
 
 ADD . .
 
-ENTRYPOINT ["go", "test", "-v", "-cover"]
+ENTRYPOINT ["go", "test", "-v", "-cover", "-parallel=1"]
