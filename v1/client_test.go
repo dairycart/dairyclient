@@ -58,39 +58,6 @@ func TestV1ClientConstructorWhereLoginCookieIsNotReturned(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestDairyclientAddsCookieToRequest(t *testing.T) {
-	t.Parallel()
-	var endpointCalled bool
-
-	handlers := map[string]http.HandlerFunc{
-		fmt.Sprintf("/v1/product/%s", exampleSKU): func(res http.ResponseWriter, req *http.Request) {
-			endpointCalled = true
-			cookies := req.Cookies()
-			if len(cookies) == 0 {
-				assert.FailNow(t, "no cookies attached to the request")
-			}
-
-			cookieFound := false
-			for _, c := range cookies {
-				if c.Name == "dairycart" {
-					cookieFound = true
-				}
-			}
-			assert.True(t, cookieFound)
-		},
-	}
-
-	ts := httptest.NewServer(handlerGenerator(handlers))
-	defer ts.Close()
-	c := buildTestClient(t, ts)
-
-	res, err := c.ProductExists(exampleSKU)
-
-	assert.NotNil(t, res)
-	assert.Nil(t, err)
-	assert.True(t, endpointCalled, "endpoint should be called")
-}
-
 func TestBuildURL(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewServer(http.NotFoundHandler())
