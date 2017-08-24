@@ -258,3 +258,51 @@ func TestDeleteReturnsErroWhenFailingToExecuteRequest(t *testing.T) {
 	err := c.delete(c.buildURL(nil, "whatever"))
 	assert.NotNil(t, err)
 }
+
+func TestDeleteReturnsErrorWhenStatusCodeIsNot200(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodDelete, "delete should be making DELETE requests")
+			res.WriteHeader(http.StatusInternalServerError)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	err := c.delete(c.buildURL(nil, "whatever"))
+	assert.NotNil(t, err)
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestMakeDataRequestReturnsErrorWhenPassedNilOrNonPointer(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	c := createInternalClient(t, ts)
+	ts.Close()
+
+	ptrErr := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), struct{}{}, struct{}{})
+	assert.NotNil(t, ptrErr, "makeDataRequest should return an error when passed a non-pointer output param")
+
+	nilErr := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), struct{}{}, nil)
+	assert.NotNil(t, nilErr, "makeDataRequest should return an error when passed a nil output param")
+}
+
+func TestMakeDataRequestReturnsErrorWhenPassedAnInvalidInputStruct(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	c := createInternalClient(t, ts)
+	ts.Close()
+
+	f := &testBreakableStruct{Thing: "dongs"}
+	err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), f, &struct{}{})
+	assert.NotNil(t, err, "makeDataRequest should return an error when passed an invalid input struct")
+}
