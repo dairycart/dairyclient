@@ -99,6 +99,10 @@ func (dc *V1Client) exists(uri string) (bool, error) {
 }
 
 func (dc *V1Client) get(uri string, obj interface{}) error {
+	if err := interfaceArgIsNotPointerOrNil(obj); err != nil {
+		return err
+	}
+
 	req, _ := http.NewRequest(http.MethodGet, uri, nil)
 	res, err := dc.executeRequest(req)
 	if err != nil {
@@ -126,6 +130,10 @@ func (dc *V1Client) delete(uri string) error {
 }
 
 func (dc *V1Client) makeDataRequest(method string, uri string, in interface{}, out interface{}) error {
+	if err := interfaceArgIsNotPointerOrNil(out); err != nil {
+		return err
+	}
+
 	body, err := createBodyFromStruct(in)
 	if err != nil {
 		return err

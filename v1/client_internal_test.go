@@ -170,3 +170,91 @@ func TestExistsReturnsFalseAndErrorWhenFailingToExecuteRequest(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.False(t, actual, "exists should return false when the status code is %d", http.StatusOK)
 }
+
+func TestGet(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodGet, "get should be making GET requests")
+			exampleResponse := `
+				{
+					"things": "stuff"
+				}
+			`
+			fmt.Fprintf(res, exampleResponse)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	expected := struct {
+		Things string `json:"things"`
+	}{
+		Things: "stuff",
+	}
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	err := c.get(c.buildURL(nil, "whatever"), &actual)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actual, "actual struct should equal expected struct")
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestGetReturnsErrorWhenPassedNilOrNonPointer(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	ptrErr := c.get(c.buildURL(nil, "whatever"), actual)
+	assert.NotNil(t, ptrErr)
+
+	nilErr := c.get(c.buildURL(nil, "whatever"), nil)
+	assert.NotNil(t, nilErr)
+}
+
+func TestDelete(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodDelete, "delete should be making DELETE requests")
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	err := c.delete(c.buildURL(nil, "whatever"))
+	assert.Nil(t, err)
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestDeleteReturnsErroWhenFailingToExecuteRequest(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	c := createInternalClient(t, ts)
+	ts.Close()
+
+	err := c.delete(c.buildURL(nil, "whatever"))
+	assert.NotNil(t, err)
+}
