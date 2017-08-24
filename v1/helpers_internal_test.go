@@ -1,3 +1,5 @@
+// +build !exported
+
 package dairyclient
 
 import (

@@ -112,20 +112,6 @@ func (dc *V1Client) get(uri string, obj interface{}) error {
 	return nil
 }
 
-func (dc *V1Client) getList(uri string, obj interface{}) error {
-	req, _ := http.NewRequest(http.MethodGet, uri, nil)
-	res, err := dc.executeRequest(req)
-	if err != nil {
-		return err
-	}
-
-	err = unmarshalBody(res, &obj)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (dc *V1Client) delete(uri string) error {
 	req, _ := http.NewRequest(http.MethodDelete, uri, nil)
 	res, err := dc.executeRequest(req)

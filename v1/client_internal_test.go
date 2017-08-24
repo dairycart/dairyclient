@@ -1,3 +1,5 @@
+// +build !exported
+
 package dairyclient
 
 import (
@@ -76,4 +78,95 @@ func TestExecuteRequestAddsCookieToRequests(t *testing.T) {
 
 	c.executeRequest(req)
 	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestUnexportedBuildURL(t *testing.T) {
+	ts := httptest.NewServer(http.NotFoundHandler())
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	testCases := []struct {
+		query    map[string]string
+		parts    []string
+		expected string
+	}{
+		{
+			query:    nil,
+			parts:    []string{""},
+			expected: fmt.Sprintf("%s/v1/", ts.URL),
+		},
+		{
+			query:    nil,
+			parts:    []string{"things", "and", "stuff"},
+			expected: fmt.Sprintf("%s/v1/things/and/stuff", ts.URL),
+		},
+		{
+			query:    map[string]string{"param": "value"},
+			parts:    []string{"example"},
+			expected: fmt.Sprintf("%s/v1/example?param=value", ts.URL),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := c.buildURL(tc.query, tc.parts...)
+		assert.Equal(t, tc.expected, actual, "expected and actual built URLs don't match")
+	}
+}
+
+func TestExists(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodHead, "exists should be making HEAD requests")
+			res.WriteHeader(http.StatusOK)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	actual, err := c.exists(c.buildURL(nil, "whatever"))
+	assert.Nil(t, err)
+	assert.True(t, actual, "exists should return false when the status code is %d", http.StatusOK)
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestExistsReturnsFalseWhen404IsReturned(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodHead, "exists should be making HEAD requests")
+			res.WriteHeader(http.StatusNotFound)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	actual, err := c.exists(c.buildURL(nil, "whatever"))
+	assert.Nil(t, err)
+	assert.False(t, actual, "exists should return false when the status code is %d", http.StatusNotFound)
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestExistsReturnsFalseAndErrorWhenFailingToExecuteRequest(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	c := createInternalClient(t, ts)
+	ts.Close()
+
+	actual, err := c.exists(c.buildURL(nil, "whatever"))
+	assert.NotNil(t, err)
+	assert.False(t, actual, "exists should return false when the status code is %d", http.StatusOK)
 }
