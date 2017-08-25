@@ -281,6 +281,44 @@ func TestDeleteReturnsErrorWhenStatusCodeIsNot200(t *testing.T) {
 	assert.True(t, endpointCalled, "endpoint should have been called")
 }
 
+func TestMakeDataRequest(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/post/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodPost, "makeDataRequest should only be making PUT or POST requests")
+			exampleResponse := `
+				{
+					"things": "stuff"
+				}
+			`
+			fmt.Fprintf(res, exampleResponse)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	expected := struct {
+		Things string `json:"things"`
+	}{
+		Things: "stuff",
+	}
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "post", "whatever"), expected, &actual)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actual, "actual struct should equal expected struct")
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
 func TestMakeDataRequestReturnsErrorWhenPassedNilOrNonPointer(t *testing.T) {
 	t.Parallel()
 
@@ -305,4 +343,132 @@ func TestMakeDataRequestReturnsErrorWhenPassedAnInvalidInputStruct(t *testing.T)
 	f := &testBreakableStruct{Thing: "dongs"}
 	err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), f, &struct{}{})
 	assert.NotNil(t, err, "makeDataRequest should return an error when passed an invalid input struct")
+}
+
+func TestMakeDataRequestReturnsErrorWhenFailingToExecuteRequest(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.NotFoundHandler())
+	c := createInternalClient(t, ts)
+	ts.Close()
+
+	expected := struct {
+		Things string `json:"things"`
+	}{
+		Things: "stuff",
+	}
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "post", "whatever"), expected, &actual)
+	assert.NotNil(t, err, "makeDataRequest should return an error when failing to execute request")
+}
+
+func TestMakeDataRequestReturnsErrorWhenFailingToUnmarshalBody(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			fmt.Fprintf(res, exampleBadJSON)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	expected := struct {
+		Things string `json:"things"`
+	}{
+		Things: "stuff",
+	}
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), expected, &actual)
+	assert.NotNil(t, err)
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestPost(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodPost, "post should only be making POST requests")
+			exampleResponse := `
+				{
+					"things": "stuff"
+				}
+			`
+			fmt.Fprintf(res, exampleResponse)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	expected := struct {
+		Things string `json:"things"`
+	}{
+		Things: "stuff",
+	}
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	err := c.post(c.buildURL(nil, "whatever"), expected, &actual)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actual, "actual struct should equal expected struct")
+	assert.True(t, endpointCalled, "endpoint should have been called")
+}
+
+func TestPatch(t *testing.T) {
+	t.Parallel()
+	var endpointCalled bool
+	exampleEndpoint := "/v1/whatever"
+
+	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
+		exampleEndpoint: func(res http.ResponseWriter, req *http.Request) {
+			endpointCalled = true
+			assert.Equal(t, req.Method, http.MethodPatch, "patch should only be making PATCH requests")
+			exampleResponse := `
+				{
+					"things": "stuff"
+				}
+			`
+			fmt.Fprintf(res, exampleResponse)
+		},
+	}
+
+	ts := httptest.NewServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := createInternalClient(t, ts)
+
+	expected := struct {
+		Things string `json:"things"`
+	}{
+		Things: "stuff",
+	}
+
+	actual := struct {
+		Things string `json:"things"`
+	}{}
+
+	err := c.patch(c.buildURL(nil, "whatever"), expected, &actual)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actual, "actual struct should equal expected struct")
+	assert.True(t, endpointCalled, "endpoint should have been called")
 }

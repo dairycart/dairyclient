@@ -156,6 +156,6 @@ func (dc *V1Client) post(uri string, in interface{}, out interface{}) error {
 	return dc.makeDataRequest(http.MethodPost, uri, in, out)
 }
 
-func (dc *V1Client) put(uri string, in interface{}, out interface{}) error {
+func (dc *V1Client) patch(uri string, in interface{}, out interface{}) error {
 	return dc.makeDataRequest(http.MethodPatch, uri, in, out)
 }

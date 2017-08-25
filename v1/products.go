@@ -55,7 +55,7 @@ func (dc *V1Client) UpdateProduct(sku string, up ProductUpdateInput) (*Product, 
 	p := Product{}
 	u := dc.buildURL(nil, "product", sku)
 
-	err := dc.put(u, up, &p)
+	err := dc.patch(u, up, &p)
 	if err != nil {
 		return nil, err
 	}
