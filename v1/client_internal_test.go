@@ -4,6 +4,7 @@ package dairyclient
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -331,6 +332,12 @@ func TestMakeDataRequest(t *testing.T) {
 		"/v1/whatever": func(res http.ResponseWriter, req *http.Request) {
 			normalEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodPost, "makeDataRequest should only be making PUT or POST requests")
+
+			bodyBytes, err := ioutil.ReadAll(req.Body)
+			assert.Nil(t, err)
+			requestBody := string(bodyBytes)
+			assert.Equal(t, requestBody, `{"things":"stuff"}`, "makeDataRequest should attach the correct JSON to the request body")
+
 			exampleResponse := `
 				{
 					"things": "stuff"

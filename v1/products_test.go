@@ -2,6 +2,7 @@ package dairyclient_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -359,6 +360,352 @@ func TestGetProducts(t *testing.T) {
 		{
 			Message: "bad response",
 			Test:    badResponse,
+		},
+	}
+	runSubtestSuite(t, subtests)
+}
+
+func TestCreateProduct(t *testing.T) {
+	exampleProductCreationInput := dairyclient.ProductInput{
+		Name:               "name",
+		Subtitle:           "subtitle",
+		Description:        "description",
+		SKU:                "sku",
+		UPC:                "upc",
+		Manufacturer:       "manufacturer",
+		Brand:              "brand",
+		Quantity:           666,
+		Price:              20,
+		SalePrice:          10,
+		Cost:               1.23,
+		ProductWeight:      9,
+		ProductHeight:      9,
+		ProductWidth:       9,
+		ProductLength:      9,
+		PackageWeight:      9,
+		PackageHeight:      9,
+		PackageWidth:       9,
+		PackageLength:      9,
+		QuantityPerPackage: 1,
+	}
+
+	normalResponse := func(t *testing.T) {
+		var normalEndpointCalled bool
+
+		handlers := map[string]http.HandlerFunc{
+			"/v1/product": func(res http.ResponseWriter, req *http.Request) {
+				normalEndpointCalled = true
+				assert.Equal(t, req.Method, http.MethodPost, "CreateProduct should only be making POST requests")
+
+				bodyBytes, err := ioutil.ReadAll(req.Body)
+				assert.Nil(t, err)
+
+				expected := `
+					{
+						"name": "name",
+						"subtitle": "subtitle",
+						"description": "description",
+						"sku": "sku",
+						"upc": "upc",
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"taxable": false,
+						"price": 20,
+						"on_sale": false,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9,
+						"quantity_per_package": 1,
+						"available_on": "0001-01-01T00:00:00Z",
+						"options": null
+					}
+				`
+				actual := string(bodyBytes)
+				assert.Equal(t, minifyJSON(t, expected), actual, "CreateProduct should attach the correct JSON to the request body")
+
+				exampleResponse := `
+					{
+						"name": "name",
+						"subtitle": "subtitle",
+						"description": "description",
+						"option_summary": "option_summary",
+						"sku": "sku",
+						"upc": "upc",
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"quantity_per_package": 1,
+						"taxable": false,
+						"price": 20,
+						"on_sale": false,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9
+					}
+				`
+				fmt.Fprintf(res, exampleResponse)
+			},
+		}
+
+		ts := httptest.NewTLSServer(handlerGenerator(handlers))
+		defer ts.Close()
+		c := buildTestClient(t, ts)
+
+		expected := &dairyclient.Product{
+			Name:               "name",
+			Subtitle:           "subtitle",
+			Description:        "description",
+			OptionSummary:      "option_summary",
+			SKU:                "sku",
+			UPC:                "upc",
+			Manufacturer:       "manufacturer",
+			Brand:              "brand",
+			Quantity:           666,
+			Price:              20,
+			SalePrice:          10,
+			Cost:               1.23,
+			ProductWeight:      9,
+			ProductHeight:      9,
+			ProductWidth:       9,
+			ProductLength:      9,
+			PackageWeight:      9,
+			PackageHeight:      9,
+			PackageWidth:       9,
+			PackageLength:      9,
+			QuantityPerPackage: 1,
+		}
+		actual, err := c.CreateProduct(exampleProductCreationInput)
+		assert.Nil(t, err, "CreateProduct with valid input and response should never produce an error")
+		assert.Equal(t, expected, actual, "expected and actual products should match")
+		assert.True(t, normalEndpointCalled, "the normal endpoint should be called")
+	}
+
+	badResponse := func(t *testing.T) {
+		var badEndpointCalled bool
+		handlers := map[string]http.HandlerFunc{
+			"/v1/product": func(res http.ResponseWriter, req *http.Request) {
+				badEndpointCalled = true
+				fmt.Fprintf(res, exampleBadJSON)
+			},
+		}
+		ts := httptest.NewTLSServer(handlerGenerator(handlers))
+		defer ts.Close()
+		c := buildTestClient(t, ts)
+
+		_, err := c.CreateProduct(exampleProductCreationInput)
+		assert.NotNil(t, err, "CreateProduct should return an error when it fails to load a response")
+		assert.True(t, badEndpointCalled, "the bad response endpoint should be called")
+	}
+
+	requestError := func(t *testing.T) {
+		ts := httptest.NewTLSServer(http.NotFoundHandler())
+		c := buildTestClient(t, ts)
+		ts.Close()
+		_, err := c.CreateProduct(dairyclient.ProductInput{})
+		assert.NotNil(t, err, "CreateProduct should return an error when faililng to execute a request")
+	}
+
+	subtests := []subtest{
+		{
+			Message: "normal response",
+			Test:    normalResponse,
+		},
+		{
+			Message: "bad response",
+			Test:    badResponse,
+		},
+		{
+			Message: "error executing request",
+			Test:    requestError,
+		},
+	}
+	runSubtestSuite(t, subtests)
+}
+
+// Note: this test is basically the same as TestCreateProduct, because those functions are incredibly similar, but with different purposes.
+// I could probably sleep well at night with no tests for this, if only it wouldn't lower my precious coverage number.
+func TestUpdateProduct(t *testing.T) {
+	exampleProductUpdateInput := dairyclient.ProductInput{
+		Name:               "name",
+		Subtitle:           "subtitle",
+		Description:        "description",
+		SKU:                "sku",
+		UPC:                "upc",
+		Manufacturer:       "manufacturer",
+		Brand:              "brand",
+		Quantity:           666,
+		Price:              20,
+		SalePrice:          10,
+		Cost:               1.23,
+		ProductWeight:      9,
+		ProductHeight:      9,
+		ProductWidth:       9,
+		ProductLength:      9,
+		PackageWeight:      9,
+		PackageHeight:      9,
+		PackageWidth:       9,
+		PackageLength:      9,
+		QuantityPerPackage: 1,
+	}
+
+	normalResponse := func(t *testing.T) {
+		var normalEndpointCalled bool
+
+		handlers := map[string]http.HandlerFunc{
+			"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
+				normalEndpointCalled = true
+				assert.Equal(t, req.Method, http.MethodPatch, "UpdateProduct should only be making PATCH requests")
+
+				bodyBytes, err := ioutil.ReadAll(req.Body)
+				assert.Nil(t, err)
+
+				expected := `
+					{
+						"name": "name",
+						"subtitle": "subtitle",
+						"description": "description",
+						"sku": "sku",
+						"upc": "upc",
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"taxable": false,
+						"price": 20,
+						"on_sale": false,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9,
+						"quantity_per_package": 1,
+						"available_on": "0001-01-01T00:00:00Z",
+						"options": null
+					}
+				`
+				actual := string(bodyBytes)
+				assert.Equal(t, minifyJSON(t, expected), actual, "UpdateProduct should attach the correct JSON to the request body")
+
+				exampleResponse := `
+					{
+						"name": "name",
+						"subtitle": "subtitle",
+						"description": "description",
+						"option_summary": "option_summary",
+						"sku": "sku",
+						"upc": "upc",
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"quantity_per_package": 1,
+						"taxable": false,
+						"price": 20,
+						"on_sale": false,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9
+					}
+				`
+				fmt.Fprintf(res, exampleResponse)
+			},
+		}
+
+		ts := httptest.NewTLSServer(handlerGenerator(handlers))
+		defer ts.Close()
+		c := buildTestClient(t, ts)
+
+		expected := &dairyclient.Product{
+			Name:               "name",
+			Subtitle:           "subtitle",
+			Description:        "description",
+			OptionSummary:      "option_summary",
+			SKU:                "sku",
+			UPC:                "upc",
+			Manufacturer:       "manufacturer",
+			Brand:              "brand",
+			Quantity:           666,
+			Price:              20,
+			SalePrice:          10,
+			Cost:               1.23,
+			ProductWeight:      9,
+			ProductHeight:      9,
+			ProductWidth:       9,
+			ProductLength:      9,
+			PackageWeight:      9,
+			PackageHeight:      9,
+			PackageWidth:       9,
+			PackageLength:      9,
+			QuantityPerPackage: 1,
+		}
+		actual, err := c.UpdateProduct(exampleSKU, exampleProductUpdateInput)
+		assert.Nil(t, err, "UpdateProduct with valid input and response should never produce an error")
+		assert.Equal(t, expected, actual, "expected and actual products should match")
+		assert.True(t, normalEndpointCalled, "the normal endpoint should be called")
+	}
+
+	badResponse := func(t *testing.T) {
+		var badEndpointCalled bool
+		handlers := map[string]http.HandlerFunc{
+			"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
+				badEndpointCalled = true
+				fmt.Fprintf(res, exampleBadJSON)
+			},
+		}
+		ts := httptest.NewTLSServer(handlerGenerator(handlers))
+		defer ts.Close()
+		c := buildTestClient(t, ts)
+
+		_, err := c.UpdateProduct(exampleSKU, exampleProductUpdateInput)
+		assert.NotNil(t, err, "UpdateProduct should return an error when it fails to load a response")
+		assert.True(t, badEndpointCalled, "the bad response endpoint should be called")
+	}
+
+	requestError := func(t *testing.T) {
+		ts := httptest.NewTLSServer(http.NotFoundHandler())
+		c := buildTestClient(t, ts)
+		ts.Close()
+		_, err := c.UpdateProduct(exampleSKU, dairyclient.ProductInput{})
+		assert.NotNil(t, err, "UpdateProduct should return an error when faililng to execute a request")
+	}
+
+	subtests := []subtest{
+		{
+			Message: "normal response",
+			Test:    normalResponse,
+		},
+		{
+			Message: "bad response",
+			Test:    badResponse,
+		},
+		{
+			Message: "error executing request",
+			Test:    requestError,
 		},
 	}
 	runSubtestSuite(t, subtests)

@@ -1,10 +1,5 @@
 package dairyclient
 
-import (
-	"net/http"
-	"strings"
-)
-
 ////////////////////////////////////////////////////////
 //                                                    //
 //                 Product Functions                  //
@@ -39,7 +34,7 @@ func (dc *V1Client) GetProducts(queryFilter map[string]string) ([]Product, error
 	return pl.Data, nil
 }
 
-func (dc *V1Client) CreateProduct(np ProductCreationInput) (*Product, error) {
+func (dc *V1Client) CreateProduct(np ProductInput) (*Product, error) {
 	p := Product{}
 	u := dc.buildURL(nil, "product")
 
@@ -51,7 +46,7 @@ func (dc *V1Client) CreateProduct(np ProductCreationInput) (*Product, error) {
 	return &p, nil
 }
 
-func (dc *V1Client) UpdateProduct(sku string, up ProductUpdateInput) (*Product, error) {
+func (dc *V1Client) UpdateProduct(sku string, up ProductInput) (*Product, error) {
 	p := Product{}
 	u := dc.buildURL(nil, "product", sku)
 
@@ -110,27 +105,43 @@ func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) (*http.Response, error) {
+func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) ([]ProductOption, error) {
 	productIDString := convertIDToString(productID)
 	u := dc.buildURL(queryFilter, "product", productIDString, "options")
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	return dc.executeRequest(req)
+	ol := ProductOptionList{}
+
+	err := dc.get(u, &ol)
+	if err != nil {
+		return nil, err
+	}
+
+	return ol.Data, nil
 }
 
-func (dc *V1Client) CreateProductOptionForProduct(productID uint64, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) CreateProductOptionForProduct(productID uint64, no ProductOption) (*ProductOption, error) {
 	productIDString := convertIDToString(productID)
-	body := strings.NewReader(JSONBody)
+	o := ProductOption{}
 	u := dc.buildURL(nil, "product", productIDString, "options")
-	req, _ := http.NewRequest(http.MethodPost, u, body)
-	return dc.executeRequest(req)
+
+	err := dc.post(u, no, &o)
+	if err != nil {
+		return nil, err
+	}
+
+	return &o, nil
 }
 
-func (dc *V1Client) UpdateProductOption(optionID uint64, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) UpdateProductOption(optionID uint64, uo ProductOption) (*ProductOption, error) {
 	optionIDString := convertIDToString(optionID)
-	body := strings.NewReader(JSONBody)
 	u := dc.buildURL(nil, "product_options", optionIDString)
-	req, _ := http.NewRequest(http.MethodPatch, u, body)
-	return dc.executeRequest(req)
+	o := ProductOption{}
+
+	err := dc.patch(u, uo, &o)
+	if err != nil {
+		return nil, err
+	}
+
+	return &o, nil
 }
 
 func (dc *V1Client) DeleteProductOption(optionID uint64) error {
@@ -145,20 +156,30 @@ func (dc *V1Client) DeleteProductOption(optionID uint64) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, nv ProductOptionValue) (*ProductOptionValue, error) {
 	optionIDString := convertIDToString(optionID)
-	body := strings.NewReader(JSONBody)
 	u := dc.buildURL(nil, "product_options", optionIDString, "value")
-	req, _ := http.NewRequest(http.MethodPost, u, body)
-	return dc.executeRequest(req)
+	v := ProductOptionValue{}
+
+	err := dc.post(u, nv, &v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
 }
 
-func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, JSONBody string) (*http.Response, error) {
+func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, uv ProductOptionValue) (*ProductOptionValue, error) {
 	valueIDString := convertIDToString(valueID)
-	body := strings.NewReader(JSONBody)
 	u := dc.buildURL(nil, "product_option_values", valueIDString)
-	req, _ := http.NewRequest(http.MethodPatch, u, body)
-	return dc.executeRequest(req)
+	v := ProductOptionValue{}
+
+	err := dc.patch(u, uv, &v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
 }
 
 func (dc *V1Client) DeleteProductOptionValueForOption(optionID uint64) error {
