@@ -322,3 +322,8 @@ type DiscountCreationInput struct {
 	NumberOfUses  int64     `json:"number_of_uses"`
 	LoginRequired bool      `json:"login_required"`
 }
+
+type DiscountList struct {
+	ListResponse
+	Data []Discount `json:"data"`
+}

@@ -1,42 +1,56 @@
 package dairyclient
 
-import (
-	"net/http"
-	"strings"
-)
-
 ////////////////////////////////////////////////////////
 //                                                    //
 //                Discount Functions                  //
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) GetDiscountByID(discountID uint64) (*http.Response, error) {
+func (dc *V1Client) GetDiscountByID(discountID uint64) (*Discount, error) {
 	discountIDString := convertIDToString(discountID)
 	u := dc.buildURL(nil, "discount", discountIDString)
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	return dc.executeRequest(req)
+	d := Discount{}
+
+	err := dc.get(u, &d)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
 }
 
-func (dc *V1Client) GetListOfDiscounts(queryFilter map[string]string) (*http.Response, error) {
-	u := dc.buildURL(queryFilter, "discounts")
-	req, _ := http.NewRequest(http.MethodGet, u, nil)
-	return dc.executeRequest(req)
-}
-
-func (dc *V1Client) CreateDiscount(JSONBody string) (*http.Response, error) {
+func (dc *V1Client) GetListOfDiscounts(queryFilter map[string]string) ([]Discount, error) {
 	u := dc.buildURL(nil, "discount")
-	body := strings.NewReader(JSONBody)
-	req, _ := http.NewRequest(http.MethodPost, u, body)
-	return dc.executeRequest(req)
+	d := DiscountList{}
+
+	err := dc.get(u, &d)
+	if err != nil {
+		return nil, err
+	}
+	return d.Data, nil
 }
 
-func (dc *V1Client) UpdateDiscount(discountID uint64, JSONBody string) (*http.Response, error) {
-	discountIDString := convertIDToString(discountID)
-	u := dc.buildURL(nil, "discount", discountIDString)
-	body := strings.NewReader(JSONBody)
-	req, _ := http.NewRequest(http.MethodPatch, u, body)
-	return dc.executeRequest(req)
+func (dc *V1Client) CreateDiscount(nd Discount) (*Discount, error) {
+	d := Discount{}
+	u := dc.buildURL(nil, "discount")
+
+	err := dc.post(u, nd, &d)
+	if err != nil {
+		return nil, err
+	}
+
+	return &d, nil
+}
+
+func (dc *V1Client) UpdateDiscount(discountID uint64, ud Discount) (*Discount, error) {
+	d := Discount{}
+	u := dc.buildURL(nil, "discount")
+
+	err := dc.patch(u, ud, &d)
+	if err != nil {
+		return nil, err
+	}
+
+	return &d, nil
 }
 
 func (dc *V1Client) DeleteDiscount(discountID uint64) error {
