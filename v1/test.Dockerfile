@@ -1,4 +1,4 @@
-FROM golang:1.9rc2-alpine
+FROM golang:latest
 WORKDIR /go/src/github.com/dairycart/dairyclient/v1
 
 ADD . .

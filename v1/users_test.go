@@ -45,7 +45,7 @@ func TestCreateUser(t *testing.T) {
 		"/v1/user": h,
 	}
 
-	ts := httptest.NewServer(handlerGenerator(handlers))
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
@@ -68,7 +68,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestCreateUserReturnsErrorWhenFailingToExecuteRequest(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.NotFoundHandler())
+	ts := httptest.NewTLSServer(http.NotFoundHandler())
 	c := buildTestClient(t, ts)
 	ts.Close()
 
@@ -107,7 +107,7 @@ func TestCreateUserReturnsErrorWhenReceivingABadResponse(t *testing.T) {
 	)
 	handlers := map[string]http.HandlerFunc{"/v1/user": handler}
 
-	ts := httptest.NewServer(handlerGenerator(handlers))
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
@@ -128,7 +128,7 @@ func TestDeleteUser(t *testing.T) {
 		fmt.Sprintf("/v1/user/%d", exampleID): generateDeleteHandler(t, "", http.StatusOK),
 	}
 
-	ts := httptest.NewServer(handlerGenerator(handlers))
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
@@ -143,7 +143,7 @@ func TestDeleteUserWhenResponseContainsError(t *testing.T) {
 		fmt.Sprintf("/v1/user/%d", exampleID): generateDeleteHandler(t, "", http.StatusNotFound),
 	}
 
-	ts := httptest.NewServer(handlerGenerator(handlers))
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 

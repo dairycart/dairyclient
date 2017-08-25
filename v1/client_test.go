@@ -60,7 +60,7 @@ func TestV1ClientConstructorWhereLoginCookieIsNotReturned(t *testing.T) {
 
 func TestBuildURL(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.NotFoundHandler())
+	ts := httptest.NewTLSServer(http.NotFoundHandler())
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
@@ -76,7 +76,7 @@ func TestBuildURL(t *testing.T) {
 
 func TestBuildURLReturnsErrorWhenFailingToParseURLParts(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.NotFoundHandler())
+	ts := httptest.NewTLSServer(http.NotFoundHandler())
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 

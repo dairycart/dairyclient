@@ -25,6 +25,11 @@ const (
 	exampleBadJSON  = `{"invalid lol}`
 )
 
+type subtest struct {
+	Message string
+	Test    func(t *testing.T)
+}
+
 ////////////////////////////////////////////////////////
 //                                                    //
 //               Test Helper Functions                //
@@ -135,4 +140,14 @@ func generateDeleteHandler(t *testing.T, responseBody string, responseHeader int
 		responseHeader,
 	)
 	return handler
+}
+
+func runSubtestSuite(t *testing.T, tests []subtest) {
+	testPassed := true
+	for _, test := range tests {
+		if !testPassed {
+			t.FailNow()
+		}
+		testPassed = t.Run(test.Message, test.Test)
+	}
 }
