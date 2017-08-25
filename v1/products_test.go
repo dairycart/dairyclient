@@ -14,33 +14,23 @@ import (
 func TestProductExists(t *testing.T) {
 	t.Parallel()
 
+	existentSKU := "existent_sku"
+	nonexistentSKU := "nonexistent_sku"
+
 	handlers := map[string]http.HandlerFunc{
-		fmt.Sprintf("/v1/product/%s", exampleSKU): generateHeadHandler(t, http.StatusOK),
+		fmt.Sprintf("/v1/product/%s", existentSKU):    generateHeadHandler(t, http.StatusOK),
+		fmt.Sprintf("/v1/product/%s", nonexistentSKU): generateHeadHandler(t, http.StatusNotFound),
 	}
 
 	ts := httptest.NewServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	exists, err := c.ProductExists(exampleSKU)
-
+	exists, err := c.ProductExists(existentSKU)
 	assert.Nil(t, err)
 	assert.True(t, exists)
-}
 
-func TestProductExistsReturnsFalseOn404(t *testing.T) {
-	t.Parallel()
-
-	handlers := map[string]http.HandlerFunc{
-		fmt.Sprintf("/v1/product/%s", exampleSKU): generateHeadHandler(t, http.StatusNotFound),
-	}
-
-	ts := httptest.NewServer(handlerGenerator(handlers))
-	defer ts.Close()
-	c := buildTestClient(t, ts)
-
-	exists, err := c.ProductExists(exampleSKU)
-
+	exists, err = c.ProductExists(nonexistentSKU)
 	assert.Nil(t, err)
 	assert.False(t, exists)
 }
