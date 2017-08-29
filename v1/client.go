@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrInvalidURL = errors.New("dairyclient: api url is invalid")
+
 type V1Client struct {
 	*http.Client
 	URL        *url.URL
@@ -24,7 +26,7 @@ func NewV1Client(storeURL string, username string, password string, client *http
 
 	u, err := url.Parse(storeURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "Store URL is not valid")
+		return nil, ErrInvalidURL
 	}
 	dc.URL = u
 
@@ -63,7 +65,7 @@ func NewV1ClientFromCookie(apiURL string, cookie *http.Cookie, client *http.Clie
 
 	u, err := url.Parse(apiURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "API URL is not valid")
+		return nil, ErrInvalidURL
 	}
 	dc.URL = u
 
