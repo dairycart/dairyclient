@@ -1,7 +1,14 @@
 package dairyclient
 
 import (
+	"database/sql"
 	"time"
+
+	"github.com/lib/pq"
+)
+
+const (
+	timeLayout = "2006-01-02T15:04:05.000000Z"
 )
 
 ////////////////////////////////////////////////////////
@@ -30,6 +37,53 @@ type ListResponse struct {
 type ErrorResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
+}
+
+// NullTime is a json.Marshal-able pq.NullTime.
+type NullTime struct {
+	pq.NullTime
+}
+
+// MarshalText satisfies the encoding.TestMarshaler interface
+func (nt NullTime) MarshalText() ([]byte, error) {
+	if nt.Valid {
+		return []byte(nt.Time.Format(timeLayout)), nil
+	}
+	return nil, nil
+}
+
+// UnmarshalText is a function which unmarshals a NullTime
+func (nt *NullTime) UnmarshalText(text []byte) (err error) {
+	if len(text) == 0 {
+		nt.Time = time.Time{}
+		nt.Valid = true
+		return nil
+	}
+
+	t, _ := time.Parse(timeLayout, string(text))
+	nt.Time = t
+	nt.Valid = true
+	return nil
+}
+
+// NullString is a json.Marshal-able sql.NullString.
+type NullString struct {
+	sql.NullString
+}
+
+// MarshalText satisfies the encoding.TestMarshaler interface
+func (ns NullString) MarshalText() ([]byte, error) {
+	if ns.Valid {
+		return []byte(ns.String), nil
+	}
+	return nil, nil
+}
+
+// UnmarshalText is a function which unmarshals a NullString
+func (ns *NullString) UnmarshalText(text []byte) (err error) {
+	ns.String = string(text)
+	ns.Valid = true
+	return nil
 }
 
 ////////////////////////////////////////////////////////
@@ -117,17 +171,17 @@ type ProductRoot struct {
 type Product struct {
 	DBRow
 	// Basic Info
-	ProductRootID      uint64 `json:"product_root_id"`
-	Name               string `json:"name"`
-	Subtitle           string `json:"subtitle"`
-	Description        string `json:"description"`
-	OptionSummary      string `json:"option_summary"`
-	SKU                string `json:"sku"`
-	UPC                string `json:"upc"`
-	Manufacturer       string `json:"manufacturer"`
-	Brand              string `json:"brand"`
-	Quantity           uint32 `json:"quantity"`
-	QuantityPerPackage uint32 `json:"quantity_per_package"`
+	ProductRootID      uint64     `json:"product_root_id"`
+	Name               string     `json:"name"`
+	Subtitle           NullString `json:"subtitle"`
+	Description        string     `json:"description"`
+	OptionSummary      string     `json:"option_summary"`
+	SKU                string     `json:"sku"`
+	UPC                NullString `json:"upc"`
+	Manufacturer       NullString `json:"manufacturer"`
+	Brand              NullString `json:"brand"`
+	Quantity           uint32     `json:"quantity"`
+	QuantityPerPackage uint32     `json:"quantity_per_package"`
 
 	// Pricing Fields
 	Taxable   bool    `json:"taxable"`
