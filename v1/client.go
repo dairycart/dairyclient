@@ -55,6 +55,24 @@ func NewV1Client(storeURL string, username string, password string, client *http
 	return dc, nil
 }
 
+func NewV1ClientFromCookie(apiURL string, cookie *http.Cookie, client *http.Client) (*V1Client, error) {
+	var dc *V1Client
+	if client != nil {
+		dc = &V1Client{Client: client}
+	}
+
+	u, err := url.Parse(apiURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "API URL is not valid")
+	}
+	dc.URL = u
+
+	dc.AuthCookie = cookie
+	dc.Client.Timeout = 5 * time.Second
+
+	return dc, nil
+}
+
 func (dc *V1Client) executeRequest(req *http.Request) (*http.Response, error) {
 	req.AddCookie(dc.AuthCookie)
 	return dc.Do(req)
