@@ -8,12 +8,11 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/dairycart/dairyclient/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/tdewolff/minify"
-
 	jsonMinify "github.com/tdewolff/minify/json"
-
-	"github.com/dairycart/dairyclient/v1"
 )
 
 const (
@@ -24,11 +23,6 @@ const (
 	exampleSKU      = `sku`
 	exampleBadJSON  = `{"invalid lol}`
 )
-
-type subtest struct {
-	Message string
-	Test    func(t *testing.T)
-}
 
 ////////////////////////////////////////////////////////
 //                                                    //
@@ -140,14 +134,4 @@ func generateDeleteHandler(t *testing.T, responseBody string, responseHeader int
 		responseHeader,
 	)
 	return handler
-}
-
-func runSubtestSuite(t *testing.T, tests []subtest) {
-	testPassed := true
-	for _, test := range tests {
-		if !testPassed {
-			t.FailNow()
-		}
-		testPassed = t.Run(test.Message, test.Test)
-	}
 }

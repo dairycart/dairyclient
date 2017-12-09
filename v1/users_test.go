@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/dairycart/dairyclient/v1"
+
+	"github.com/stretchr/testify/assert"
 )
 
 ////////////////////////////////////////////////////////

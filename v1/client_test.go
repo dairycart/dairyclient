@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/dairycart/dairyclient/v1"
+
+	"github.com/stretchr/testify/assert"
 )
 
 ////////////////////////////////////////////////////////
@@ -17,63 +17,58 @@ import (
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func TestV1ClientConstructor(t *testing.T) {
+func TestNewV1Client(t *testing.T) {
 	t.Parallel()
 
-	normalUse := func(t *testing.T) {
+	t.Run("normal usage", func(t *testing.T) {
 		ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
 		defer ts.Close()
-
 		c, err := dairyclient.NewV1Client(ts.URL, exampleUsername, examplePassword, ts.Client())
 
 		assert.NotNil(t, c.AuthCookie)
 		assert.Nil(t, err)
-	}
+	})
 
-	invalidURL := func(t *testing.T) {
+	t.Run("invalid URL", func(t *testing.T) {
 		c, err := dairyclient.NewV1Client(":", exampleUsername, examplePassword, nil)
 		assert.Nil(t, c)
 		assert.NotNil(t, err)
-	}
+	})
 
-	loginFailure := func(t *testing.T) {
+	t.Run("login failure", func(t *testing.T) {
 		ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
 		ts.Close()
 		c, err := dairyclient.NewV1Client(ts.URL, exampleUsername, examplePassword, ts.Client())
 
 		assert.Nil(t, c)
 		assert.NotNil(t, err)
-	}
+	})
 
-	sansCookie := func(t *testing.T) {
+	t.Run("without cookie", func(t *testing.T) {
 		ts := httptest.NewTLSServer(obligatoryLoginHandler(false))
 		defer ts.Close()
-
 		c, err := dairyclient.NewV1Client(ts.URL, exampleUsername, examplePassword, ts.Client())
 
 		assert.Nil(t, c)
 		assert.NotNil(t, err)
-	}
+	})
+}
 
-	subtests := []subtest{
-		{
-			Message: "normal use",
-			Test:    normalUse,
-		},
-		{
-			Message: "invalid url",
-			Test:    invalidURL,
-		},
-		{
-			Message: "login failure",
-			Test:    loginFailure,
-		},
-		{
-			Message: "no cookie returned",
-			Test:    sansCookie,
-		},
-	}
-	runSubtestSuite(t, subtests)
+func TestNewV1ClientFromCookie(t *testing.T) {
+	t.Parallel()
+
+	t.Run("normal use", func(*testing.T) {
+		ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
+		defer ts.Close()
+
+		_, err := dairyclient.NewV1ClientFromCookie(ts.URL, &http.Cookie{}, ts.Client())
+		assert.NoError(t, err)
+	})
+
+	t.Run("with invalid URL", func(*testing.T) {
+		_, err := dairyclient.NewV1ClientFromCookie(":", &http.Cookie{}, http.DefaultClient)
+		assert.Error(t, err)
+	})
 }
 
 func TestBuildURL(t *testing.T) {
@@ -82,8 +77,7 @@ func TestBuildURL(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	normalUse := func(t *testing.T) {
-
+	t.Run("normal usage", func(t *testing.T) {
 		expected := fmt.Sprintf("%s/v1/things/stuff?query=params", ts.URL)
 		exampleParams := map[string]string{
 			"query": "params",
@@ -92,24 +86,12 @@ func TestBuildURL(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual, "BuildURL doesn't return the correct result. Expected `%s`, got `%s`", expected, actual)
-	}
+	})
 
-	invalidURL := func(t *testing.T) {
+	t.Run("invalid URL", func(t *testing.T) {
 		actual, err := c.BuildURL(nil, `%gh&%ij`)
 
 		assert.NotNil(t, err)
 		assert.Empty(t, actual)
-	}
-
-	subtests := []subtest{
-		{
-			Message: "normal use",
-			Test:    normalUse,
-		},
-		{
-			Message: "invalid url",
-			Test:    invalidURL,
-		},
-	}
-	runSubtestSuite(t, subtests)
+	})
 }

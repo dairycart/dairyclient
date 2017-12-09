@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/dairycart/dairycart"
+  packages = ["api/storage/models"]
+  revision = "ab5373439497e3b6f3bbae2a60ff6734029069fe"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -58,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b767e2765405973c61492c84f0ebdd08e9d82e48056c5288968af3f454bcf504"
+  inputs-digest = "5213aad7684fdde8e437fb3b58805996496821786c1a16514d3d3e2bccf05d95"
   solver-name = "gps-cdcl"
   solver-version = 1
