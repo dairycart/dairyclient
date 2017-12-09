@@ -11,6 +11,9 @@ go:
 before_install:
   # install goveralls
   - go get github.com/mattn/goveralls
+  # install dep
+  - go get github.com/golang/dep/cmd/dep
+  - (cd v1 && dep ensure -v)
   # build test image
   - docker build -t tests -f v1/test.Dockerfile v1
 
