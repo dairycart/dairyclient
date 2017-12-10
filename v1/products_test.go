@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/dairycart/dairymodels/v1"
 
@@ -22,8 +23,6 @@ func buildNotFoundProductResponse(sku string) string {
 }
 
 func TestProductExists(t *testing.T) {
-	t.Parallel()
-
 	existentSKU := "existent_sku"
 	nonexistentSKU := "nonexistent_sku"
 
@@ -36,14 +35,14 @@ func TestProductExists(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	t.Run("with existent product", func(_t *testing.T) {
+	t.Run("with existent product", func(*testing.T) {
 		exists, err := c.ProductExists(existentSKU)
 		assert.Nil(t, err)
 		assert.True(t, exists)
 
 	})
 
-	t.Run("with nonexistent product", func(_t *testing.T) {
+	t.Run("with nonexistent product", func(*testing.T) {
 		exists, err := c.ProductExists(nonexistentSKU)
 		assert.Nil(t, err)
 		assert.False(t, exists)
@@ -51,8 +50,6 @@ func TestProductExists(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
-	t.Parallel()
-
 	goodResponseSKU := "good"
 	nonexistentSKU := "nonexistent"
 	badResponseSKU := "bad"
@@ -95,7 +92,7 @@ func TestGetProduct(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	t.Run("normal usage", func(_t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		expected := &models.Product{
 			Name:               "Your Favorite Band's T-Shirt",
 			Subtitle:           "A t-shirt you can wear",
@@ -126,17 +123,17 @@ func TestGetProduct(t *testing.T) {
 		assert.Equal(t, expected, actual, "expected product doesn't match actual product")
 	})
 
-	t.Run("nonexistent product", func(_t *testing.T) {
+	t.Run("nonexistent product", func(*testing.T) {
 		_, err := c.GetProduct(nonexistentSKU)
 		assert.NotNil(t, err)
 	})
 
-	t.Run("bad response from server", func(_t *testing.T) {
+	t.Run("bad response from server", func(*testing.T) {
 		_, err := c.GetProduct(badResponseSKU)
 		assert.NotNil(t, err)
 	})
 
-	t.Run("with request error", func(_t *testing.T) {
+	t.Run("with request error", func(*testing.T) {
 		ts.Close()
 		_, err := c.GetProduct(exampleSKU)
 		assert.NotNil(t, err)
@@ -144,8 +141,6 @@ func TestGetProduct(t *testing.T) {
 }
 
 func TestGetProducts(t *testing.T) {
-	t.Parallel()
-
 	exampleGoodResponse := `
 		{
 			"count": 5,
@@ -230,7 +225,7 @@ func TestGetProducts(t *testing.T) {
 		}
 	`
 
-	t.Run("normal usage", func(_t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		expected := []models.Product{
 			{
 				ID:                 1,
@@ -326,7 +321,7 @@ func TestGetProducts(t *testing.T) {
 		assert.Equal(t, expected, actual, "expected product doesn't match actual product")
 	})
 
-	t.Run("with bad server response", func(_t *testing.T) {
+	t.Run("with bad server response", func(*testing.T) {
 		handlers := map[string]http.HandlerFunc{
 			"/v1/products": generateGetHandler(t, exampleBadJSON, http.StatusOK),
 		}
@@ -362,7 +357,7 @@ func TestCreateProduct(t *testing.T) {
 		QuantityPerPackage: 1,
 	}
 
-	t.Run("normal response", func(_t *testing.T) {
+	t.Run("normal response", func(*testing.T) {
 		var normalEndpointCalled bool
 
 		handlers := map[string]http.HandlerFunc{
@@ -471,7 +466,7 @@ func TestCreateProduct(t *testing.T) {
 		assert.True(t, normalEndpointCalled, "the normal endpoint should be called")
 	})
 
-	t.Run("with bad server response", func(_t *testing.T) {
+	t.Run("with bad server response", func(*testing.T) {
 		var badEndpointCalled bool
 		handlers := map[string]http.HandlerFunc{
 			"/v1/product": func(res http.ResponseWriter, req *http.Request) {
@@ -488,7 +483,7 @@ func TestCreateProduct(t *testing.T) {
 		assert.True(t, badEndpointCalled, "the bad response endpoint should be called")
 	})
 
-	t.Run("with request error", func(_t *testing.T) {
+	t.Run("with request error", func(*testing.T) {
 		ts := httptest.NewTLSServer(http.NotFoundHandler())
 		c := buildTestClient(t, ts)
 		ts.Close()
@@ -523,7 +518,7 @@ func TestUpdateProduct(t *testing.T) {
 		QuantityPerPackage: 1,
 	}
 
-	t.Run("normal response", func(_t *testing.T) {
+	t.Run("normal response", func(*testing.T) {
 		var normalEndpointCalled bool
 
 		handlers := map[string]http.HandlerFunc{
@@ -634,7 +629,7 @@ func TestUpdateProduct(t *testing.T) {
 		assert.True(t, normalEndpointCalled, "the normal endpoint should be called")
 	})
 
-	t.Run("bad response", func(_t *testing.T) {
+	t.Run("bad response", func(*testing.T) {
 		var badEndpointCalled bool
 		handlers := map[string]http.HandlerFunc{
 			"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
@@ -651,7 +646,7 @@ func TestUpdateProduct(t *testing.T) {
 		assert.True(t, badEndpointCalled, "the bad response endpoint should be called")
 	})
 
-	t.Run("with request error", func(_t *testing.T) {
+	t.Run("with request error", func(*testing.T) {
 		ts := httptest.NewTLSServer(http.NotFoundHandler())
 		c := buildTestClient(t, ts)
 		ts.Close()
@@ -661,8 +656,6 @@ func TestUpdateProduct(t *testing.T) {
 }
 
 func TestDeleteProduct(t *testing.T) {
-	t.Parallel()
-
 	exampleResponseJSON := `
 		{
 			"id": 1,
@@ -709,35 +702,692 @@ func TestDeleteProduct(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	t.Run("with existent product", func(_t *testing.T) {
+	t.Run("with existent product", func(*testing.T) {
 		err := c.DeleteProduct(existentSKU)
 		assert.Nil(t, err)
 	})
 
-	t.Run("with nonexistent product", func(_t *testing.T) {
+	t.Run("with nonexistent product", func(*testing.T) {
 		err := c.DeleteProduct(nonexistentSKU)
 		assert.NotNil(t, err)
 	})
 }
 
+func compareProductOptionValues(t *testing.T, expected, actual models.ProductOptionValue, optionIndex, optionValueIndex int) {
+	assert.Equal(t, expected.Value, actual.Value, "expected and actual Value for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	assert.Equal(t, expected.ProductOptionID, actual.ProductOptionID, "expected and actual ProductOptionID for option value %d (option %d) should match", optionValueIndex, optionIndex)
+}
+
+func compareProductOptions(t *testing.T, expected, actual models.ProductOption, optionIndex int) {
+	assert.Equal(t, expected.ProductRootID, actual.ProductRootID, "expected and actual ProductRootID for option %d should match", optionIndex)
+	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn for option %d should match", optionIndex)
+	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID for option %d should match", optionIndex)
+	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn for option %d should match", optionIndex)
+	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn for option %d should match", optionIndex)
+	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name for option %d should match", optionIndex)
+
+	for i := range expected.Values {
+		if len(actual.Values)-1 < i {
+			t.Logf("expected %d option values, got %d instead.", len(expected.Values), len(actual.Values))
+			t.Fail()
+			break
+		}
+		compareProductOptionValues(t, expected.Values[i], actual.Values[i], optionIndex, i)
+	}
+}
+
+func compareProductRoots(t *testing.T, expected, actual *models.ProductRoot) {
+	t.Helper()
+	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID should match")
+	assert.Equal(t, expected.AvailableOn, actual.AvailableOn, "expected and actual AvailableOn should match")
+	assert.Equal(t, expected.ProductLength, actual.ProductLength, "expected and actual ProductLength should match")
+	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn should match")
+	assert.Equal(t, expected.SKUPrefix, actual.SKUPrefix, "expected and actual SKUPrefix should match")
+	assert.Equal(t, expected.PackageHeight, actual.PackageHeight, "expected and actual PackageHeight should match")
+	assert.Equal(t, expected.ProductWeight, actual.ProductWeight, "expected and actual ProductWeight should match")
+	assert.Equal(t, expected.ProductWidth, actual.ProductWidth, "expected and actual ProductWidth should match")
+	assert.Equal(t, expected.QuantityPerPackage, actual.QuantityPerPackage, "expected and actual QuantityPerPackage should match")
+	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name should match")
+	assert.Equal(t, expected.ProductHeight, actual.ProductHeight, "expected and actual ProductHeight should match")
+	assert.Equal(t, expected.PackageLength, actual.PackageLength, "expected and actual PackageLength should match")
+	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn should match")
+	assert.Equal(t, expected.Cost, actual.Cost, "expected and actual Cost should match")
+	assert.Equal(t, expected.Brand, actual.Brand, "expected and actual Brand should match")
+	assert.Equal(t, expected.Subtitle, actual.Subtitle, "expected and actual Subtitle should match")
+	assert.Equal(t, expected.PackageWeight, actual.PackageWeight, "expected and actual PackageWeight should match")
+	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn should match")
+	assert.Equal(t, expected.PackageWidth, actual.PackageWidth, "expected and actual PackageWidth should match")
+	assert.Equal(t, expected.Description, actual.Description, "expected and actual Description should match")
+	assert.Equal(t, expected.Manufacturer, actual.Manufacturer, "expected and actual Manufacturer should match")
+	assert.Equal(t, expected.Taxable, actual.Taxable, "expected and actual Taxable should match")
+
+	for i := range expected.Options {
+		if len(actual.Options)-1 < i {
+			t.Logf("expected %d options, got %d instead.", len(expected.Options), len(actual.Options))
+			t.Fail()
+			break
+		}
+		compareProductOptions(t, expected.Options[i], actual.Options[i], i)
+	}
+
+	for i := range expected.Products {
+		if len(actual.Products)-1 < i {
+			t.Logf("expected %d products, got %d instead.", len(expected.Products), len(actual.Products))
+			t.Fail()
+			break
+		}
+		compareProducts(t, expected.Products[i], actual.Products[i])
+	}
+}
+
+// TODO: maybe these functions should just set the values that we don't care about equality for rather than check for the equality of each field
+// for instance, we don't really worry about IDs, so make this function set the expected.ID to actual.ID and then use assert to check equality
+func compareProducts(t *testing.T, expected models.Product, actual models.Product) {
+	t.Helper()
+	assert.Equal(t, expected.ProductWidth, actual.ProductWidth, "expected and actual ProductWidth should match")
+	assert.Equal(t, expected.PackageLength, actual.PackageLength, "expected and actual PackageLength should match")
+	assert.Equal(t, expected.SalePrice, actual.SalePrice, "expected and actual SalePrice should match")
+	assert.Equal(t, expected.Description, actual.Description, "expected and actual Description should match")
+	assert.Equal(t, expected.PackageWeight, actual.PackageWeight, "expected and actual PackageWeight should match")
+	assert.Equal(t, expected.Price, actual.Price, "expected and actual Price should match")
+	assert.Equal(t, expected.ProductWeight, actual.ProductWeight, "expected and actual ProductWeight should match")
+	assert.Equal(t, expected.Quantity, actual.Quantity, "expected and actual Quantity should match")
+	assert.Equal(t, expected.ProductRootID, actual.ProductRootID, "expected and actual ProductRootID should match")
+	assert.Equal(t, expected.ProductHeight, actual.ProductHeight, "expected and actual ProductHeight should match")
+	assert.Equal(t, expected.Taxable, actual.Taxable, "expected and actual Taxable should match")
+	assert.Equal(t, expected.Brand, actual.Brand, "expected and actual Brand should match")
+	assert.Equal(t, expected.ProductLength, actual.ProductLength, "expected and actual ProductLength should match")
+	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn should match")
+	assert.Equal(t, expected.AvailableOn, actual.AvailableOn, "expected and actual AvailableOn should match")
+	assert.Equal(t, expected.QuantityPerPackage, actual.QuantityPerPackage, "expected and actual QuantityPerPackage should match")
+	assert.Equal(t, expected.OnSale, actual.OnSale, "expected and actual OnSale should match")
+	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name should match")
+	assert.Equal(t, expected.SKU, actual.SKU, "expected and actual SKU should match")
+	assert.Equal(t, expected.Manufacturer, actual.Manufacturer, "expected and actual Manufacturer should match")
+	assert.Equal(t, expected.Subtitle, actual.Subtitle, "expected and actual Subtitle should match")
+	assert.Equal(t, expected.PackageWidth, actual.PackageWidth, "expected and actual PackageWidth should match")
+	assert.Equal(t, expected.Cost, actual.Cost, "expected and actual Cost should match")
+	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID should match")
+	assert.Equal(t, expected.PackageHeight, actual.PackageHeight, "expected and actual PackageHeight should match")
+	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn should match")
+	assert.Equal(t, expected.OptionSummary, actual.OptionSummary, "expected and actual OptionSummary should match")
+	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn should match")
+	assert.Equal(t, expected.UPC, actual.UPC, "expected and actual UPC should match")
+
+	for i := range expected.ApplicableOptionValues {
+		if len(actual.ApplicableOptionValues)-1 < i {
+			t.Logf("expected %d option values attached to product, got %d instead.", len(expected.ApplicableOptionValues), len(actual.ApplicableOptionValues))
+			t.Fail()
+			break
+		}
+		compareProductOptionValues(t, expected.ApplicableOptionValues[i], actual.ApplicableOptionValues[i], 0, i)
+	}
+}
+
+func buildNotFoundProductRootResponse(id uint64) string {
+	return fmt.Sprintf(`
+		{
+			"status": 404,
+			"message": "The product_root you were looking for (identified by '%d') does not exist"
+		}
+	`, id)
+}
+
 func TestGetProductRoot(t *testing.T) {
-	t.Skip()
+	exampleResponseJSON := loadExampleResponse(t, "product_root")
+	existentID := uint64(1)
+	nonexistentID := uint64(2)
+
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product_root/%d", existentID):    generateGetHandler(t, exampleResponseJSON, http.StatusOK),
+		fmt.Sprintf("/v1/product_root/%d", nonexistentID): generateGetHandler(t, buildNotFoundProductRootResponse(nonexistentID), http.StatusNotFound),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	t.Run("normal usage", func(*testing.T) {
+		pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+		expected := &models.ProductRoot{
+			ID:                 1,
+			Name:               "Your Favorite Band's T-Shirt",
+			Subtitle:           "A t-shirt you can wear",
+			Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+			SKUPrefix:          "t-shirt",
+			Manufacturer:       "Record Company",
+			Brand:              "Your Favorite Band",
+			Taxable:            true,
+			Cost:               20,
+			ProductWeight:      1,
+			ProductHeight:      5,
+			ProductWidth:       5,
+			ProductLength:      5,
+			PackageWeight:      1,
+			PackageHeight:      5,
+			PackageWidth:       5,
+			PackageLength:      5,
+			QuantityPerPackage: 1,
+			AvailableOn:        pTime,
+			CreatedOn:          pTime,
+			Options: []models.ProductOption{
+				{
+					ID:            1,
+					ProductRootID: 1,
+					Name:          "color",
+					CreatedOn:     pTime,
+				},
+				{
+					ID:            2,
+					ProductRootID: 1,
+					Name:          "size",
+					CreatedOn:     pTime,
+				},
+			},
+			Products: []models.Product{
+				{
+					ID:                 1,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-small-red",
+					OptionSummary:      "Size: Small, Color: Red",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 2,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-medium-red",
+					OptionSummary:      "Size: Medium, Color: Red",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 3,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-large-red",
+					OptionSummary:      "Size: Large, Color: Red",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 4,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-small-blue",
+					OptionSummary:      "Size: Small, Color: Blue",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 5,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-medium-blue",
+					OptionSummary:      "Size: Medium, Color: Blue",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 6,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-large-blue",
+					OptionSummary:      "Size: Large, Color: Blue",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 7,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-small-green",
+					OptionSummary:      "Size: Small, Color: Green",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 8,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-medium-green",
+					OptionSummary:      "Size: Medium, Color: Green",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+				{
+					ID:                 9,
+					ProductRootID:      1,
+					Name:               "Your Favorite Band's T-Shirt",
+					Subtitle:           "A t-shirt you can wear",
+					Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
+					SKU:                "t-shirt-large-green",
+					OptionSummary:      "Size: Large, Color: Green",
+					Manufacturer:       "Record Company",
+					Brand:              "Your Favorite Band",
+					Taxable:            true,
+					Quantity:           666,
+					Price:              20,
+					Cost:               10,
+					ProductWeight:      1,
+					ProductHeight:      5,
+					ProductWidth:       5,
+					ProductLength:      5,
+					PackageWeight:      1,
+					PackageHeight:      5,
+					PackageWidth:       5,
+					PackageLength:      5,
+					QuantityPerPackage: 1,
+					AvailableOn:        pTime,
+					CreatedOn:          pTime,
+				},
+			},
+		}
+
+		actual, err := c.GetProductRoot(existentID)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual, "expected and actual product roots don't match.")
+	})
+
+	t.Run("with nonexistent product root", func(*testing.T) {
+		_, err := c.GetProductRoot(nonexistentID)
+		assert.NotNil(t, err)
+	})
 }
 
 func TestGetProductRoots(t *testing.T) {
-	t.Skip()
+	exampleResponseJSON := loadExampleResponse(t, "product_roots")
+	handlers := map[string]http.HandlerFunc{
+		"/v1/product_roots": generateGetHandler(t, exampleResponseJSON, http.StatusOK),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	assert.Nil(t, err)
+
+	t.Run("normal usage", func(*testing.T) {
+		expected := []models.ProductRoot{
+			{
+				ID:                 5,
+				Name:               "Animals As Leaders - The Joy Of Motion",
+				Subtitle:           "A solid prog metal album",
+				Description:        "Arbitrary description can go here because real product descriptions are technically copywritten.",
+				Brand:              "Animals As Leaders",
+				Manufacturer:       "Record Company",
+				SKUPrefix:          "the-joy-of-motion",
+				QuantityPerPackage: 1,
+				ProductLength:      0.5,
+				PackageHeight:      12,
+				ProductWeight:      1,
+				ProductWidth:       12,
+				ProductHeight:      12,
+				PackageLength:      0.5,
+				PackageWeight:      1,
+				PackageWidth:       12,
+				Cost:               5,
+				Taxable:            true,
+				AvailableOn:        pTime,
+				CreatedOn:          pTime,
+			},
+			{
+				ID:                 6,
+				Name:               "Mort Garson - Mother Earth's Plantasia",
+				Subtitle:           "A solid synth album",
+				Description:        "Arbitrary description can go here because real product descriptions are technically copywritten.",
+				Brand:              "Mort Garson",
+				Manufacturer:       "Record Company",
+				SKUPrefix:          "mother-earths-plantasia",
+				QuantityPerPackage: 1,
+				ProductLength:      0.5,
+				PackageHeight:      12,
+				ProductWeight:      1,
+				ProductWidth:       12,
+				ProductHeight:      12,
+				PackageLength:      0.5,
+				PackageWeight:      1,
+				PackageWidth:       12,
+				Cost:               5,
+				Taxable:            true,
+				AvailableOn:        pTime,
+				CreatedOn:          pTime,
+			},
+		}
+
+		actual, err := c.GetProductRoots(nil)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+	})
 }
 
 func TestDeleteProductRoot(t *testing.T) {
-	t.Skip()
+	existentID := uint64(1)
+	nonexistentID := uint64(2)
+
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product_root/%d", existentID):    generateDeleteHandler(t, "{}", http.StatusNotFound),
+		fmt.Sprintf("/v1/product_root/%d", nonexistentID): generateDeleteHandler(t, buildNotFoundProductRootResponse(nonexistentID), http.StatusNotFound),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	t.Run("normal usage", func(*testing.T) {
+		err := c.DeleteProductRoot(existentID)
+		assert.Nil(t, err)
+	})
+
+	t.Run("nonexistent product root", func(*testing.T) {
+		err := c.DeleteProductRoot(nonexistentID)
+		assert.NotNil(t, err)
+	})
+}
+
+func buildNotFoundProductOptionsResponse(productID uint64) string {
+	// FIXME
+	return fmt.Sprintf(`
+		{
+			"count": 2,
+			"limit": 25,
+			"page": 1,
+			"data": null
+		}
+	`, productID)
 }
 
 func TestGetProductOptions(t *testing.T) {
-	t.Skip()
+	existentID := uint64(1)
+	nonexistentID := uint64(2)
+	exampleResponseJSON := loadExampleResponse(t, "product_options")
+
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%d/options", existentID):    generateGetHandler(t, exampleResponseJSON, http.StatusOK),
+		fmt.Sprintf("/v1/product/%d/options", nonexistentID): generateGetHandler(t, buildNotFoundProductOptionsResponse(nonexistentID), http.StatusNotFound),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	assert.Nil(t, err)
+
+	t.Run("normal operation", func(*testing.T) {
+		expected := []models.ProductOption{
+			{
+				ID:            1,
+				Name:          "color",
+				ProductRootID: 1,
+				CreatedOn:     pTime,
+				Values: []models.ProductOptionValue{
+					{
+						ID:              1,
+						ProductOptionID: 1,
+						Value:           "red",
+						CreatedOn:       pTime,
+					},
+					{
+						ID:              2,
+						ProductOptionID: 1,
+						Value:           "green",
+						CreatedOn:       pTime,
+					},
+					{
+						ID:              3,
+						ProductOptionID: 1,
+						Value:           "blue",
+						CreatedOn:       pTime,
+					},
+				},
+			},
+			{
+				ID:            2,
+				Name:          "size",
+				ProductRootID: 1,
+				CreatedOn:     pTime,
+				Values: []models.ProductOptionValue{
+					{
+						ID:              4,
+						ProductOptionID: 2,
+						Value:           "small",
+						CreatedOn:       pTime,
+					},
+					{
+						ID:              5,
+						ProductOptionID: 2,
+						Value:           "medium",
+						CreatedOn:       pTime,
+					},
+					{
+						ID:              6,
+						ProductOptionID: 2,
+						Value:           "large",
+						CreatedOn:       pTime,
+					},
+				},
+			},
+		}
+
+		actual, err := c.GetProductOptions(existentID, nil)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("for nonexistent product root", func(*testing.T) {
+		_, err := c.GetProductOptions(nonexistentID, nil)
+		assert.NotNil(t, err)
+	})
 }
 
-func TestCreateProductOptionForProduct(t *testing.T) {
-	t.Skip()
+func TestCreateProductOption(t *testing.T) {
+	existentID := uint64(1)
+	exampleResponseJSON := loadExampleResponse(t, "created_product_options")
+	expectedBody := `
+		{
+			"name": "example_option",
+			"values": [
+				"one",
+				"two",
+				"three"
+			]
+		}
+	`
+
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%d/options", existentID): generatePostHandler(t, expectedBody, exampleResponseJSON, http.StatusCreated),
+		// fmt.Sprintf("/v1/product/%d/options", nonexistentID): generateGetHandler(t, buildNotFoundProductOptionsResponse(nonexistentID), http.StatusNotFound),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	assert.Nil(t, err)
+
+	t.Run("normal operation", func(*testing.T) {
+		exampleInput := models.ProductOptionCreationInput{
+			Name:   "example_option",
+			Values: []string{"one", "two", "three"},
+		}
+
+		expected := &models.ProductOption{
+			ID:            3,
+			Name:          "example_option",
+			ProductRootID: 1,
+			CreatedOn:     pTime,
+			Values: []models.ProductOptionValue{
+				{
+					ID:              7,
+					ProductOptionID: 3,
+					Value:           "one",
+					CreatedOn:       pTime,
+				},
+				{
+					ID:              8,
+					ProductOptionID: 3,
+					Value:           "two",
+					CreatedOn:       pTime,
+				},
+				{
+					ID:              9,
+					ProductOptionID: 3,
+					Value:           "three",
+					CreatedOn:       pTime,
+				},
+			},
+		}
+
+		actual, err := c.CreateProductOption(1, exampleInput)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
 }
 
 func TestUpdateProductOption(t *testing.T) {

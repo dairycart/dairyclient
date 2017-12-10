@@ -60,7 +60,7 @@ func createInternalClient(t *testing.T, ts *httptest.Server) *V1Client {
 ////////////////////////////////////////////////////////
 
 func TestExecuteRequestAddsCookieToRequests(t *testing.T) {
-	t.Parallel()
+
 	var endpointCalled bool
 	exampleEndpoint := "/v1/whatever"
 
@@ -127,7 +127,6 @@ func TestUnexportedBuildURL(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
-	t.Parallel()
 
 	var normalEndpointCalled bool
 	var fourOhFourEndpointCalled bool
@@ -148,7 +147,7 @@ func TestExists(t *testing.T) {
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	c := createInternalClient(t, ts)
 
-	t.Run("normal usage", func(_t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		actual, err := c.exists(c.buildURL(nil, "normal"))
 		assert.Nil(t, err)
 		assert.True(t, actual, "exists should return false when the status code is %d", http.StatusOK)
@@ -171,7 +170,7 @@ func TestExists(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	t.Parallel()
+
 	var normalEndpointCalled bool
 	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
 		"/v1/normal": func(res http.ResponseWriter, req *http.Request) {
@@ -190,7 +189,7 @@ func TestGet(t *testing.T) {
 	defer ts.Close()
 	c := createInternalClient(t, ts)
 
-	t.Run("normal usage", func(_t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -223,7 +222,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	t.Parallel()
+
 	var normalEndpointCalled bool
 	var fiveHundredEndpointCalled bool
 
@@ -270,7 +269,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestMakeDataRequest(t *testing.T) {
-	t.Parallel()
+
 	var normalEndpointCalled bool
 	var badJSONEndpointCalled bool
 
@@ -300,7 +299,7 @@ func TestMakeDataRequest(t *testing.T) {
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	c := createInternalClient(t, ts)
 
-	t.Run("normal usage", func(_t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -317,23 +316,23 @@ func TestMakeDataRequest(t *testing.T) {
 		assert.True(t, normalEndpointCalled, "endpoint should have been called")
 	})
 
-	t.Run("nil argument", func(_t *testing.T) {
+	t.Run("nil argument", func(*testing.T) {
 		ptrErr := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), struct{}{}, struct{}{})
 		assert.NotNil(t, ptrErr, "makeDataRequest should return an error when passed a non-pointer output param")
 	})
 
-	t.Run("non-pointer argument", func(_t *testing.T) {
+	t.Run("non-pointer argument", func(*testing.T) {
 		nilErr := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), struct{}{}, nil)
 		assert.NotNil(t, nilErr, "makeDataRequest should return an error when passed a nil output param")
 	})
 
-	t.Run("invalid struct argument", func(_t *testing.T) {
+	t.Run("invalid struct argument", func(*testing.T) {
 		f := &testBreakableStruct{Thing: "dongs"}
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), f, &struct{}{})
 		assert.NotNil(t, err, "makeDataRequest should return an error when passed an invalid input struct")
 	})
 
-	t.Run("unmarshal failure", func(_t *testing.T) {
+	t.Run("unmarshal failure", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -349,7 +348,7 @@ func TestMakeDataRequest(t *testing.T) {
 		assert.True(t, badJSONEndpointCalled, "endpoint should have been called")
 	})
 
-	t.Run("failed request", func(_t *testing.T) {
+	t.Run("failed request", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -367,7 +366,6 @@ func TestMakeDataRequest(t *testing.T) {
 }
 
 func TestPost(t *testing.T) {
-	t.Parallel()
 
 	var endpointCalled bool
 	exampleEndpoint := "/v1/whatever"
@@ -407,7 +405,6 @@ func TestPost(t *testing.T) {
 }
 
 func TestPatch(t *testing.T) {
-	t.Parallel()
 
 	var endpointCalled bool
 	exampleEndpoint := "/v1/whatever"

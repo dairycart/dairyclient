@@ -16,7 +16,7 @@ import (
 )
 
 func TestMapToQueryValues(t *testing.T) {
-	t.Parallel()
+
 	exampleQueryParams := map[string]string{
 		"param": "value",
 	}
@@ -40,10 +40,8 @@ func (ft testFailReader) Read([]byte) (int, error) {
 }
 
 func TestUnmarshalBody(t *testing.T) {
-	t.Parallel()
 
-	t.Run("normal operation", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("normal operation", func(*testing.T) {
 
 		exampleInput := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`{"thing":"something"}`)),
@@ -57,8 +55,7 @@ func TestUnmarshalBody(t *testing.T) {
 		assert.Equal(t, expected, actual, "expected and actual unmarshaled structs should match")
 	})
 
-	t.Run("should fail when receiving nil", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("should fail when receiving nil", func(*testing.T) {
 
 		exampleFailureInput := &http.Response{
 			Body: ioutil.NopCloser(testFailReader{}),
@@ -70,8 +67,7 @@ func TestUnmarshalBody(t *testing.T) {
 		assert.Equal(t, expected, err, "expected error string %s")
 	})
 
-	t.Run("fails when it receives a non pointer", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("fails when it receives a non pointer", func(*testing.T) {
 
 		exampleFailureInput := &http.Response{
 			Body: ioutil.NopCloser(testFailReader{}),
@@ -83,8 +79,7 @@ func TestUnmarshalBody(t *testing.T) {
 		assert.Equal(t, expected, err)
 	})
 
-	t.Run("returns ReadAll error", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("returns ReadAll error", func(*testing.T) {
 
 		exampleFailureInput := &http.Response{
 			Body: ioutil.NopCloser(testFailReader{}),
@@ -94,8 +89,7 @@ func TestUnmarshalBody(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 
-	t.Run("with invalid struct", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("with invalid struct", func(*testing.T) {
 
 		exampleInput := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`{"invalid_lol}`)),
@@ -109,7 +103,7 @@ func TestUnmarshalBody(t *testing.T) {
 }
 
 func TestConvertIDToString(t *testing.T) {
-	t.Parallel()
+
 	testCases := []struct {
 		input    uint64
 		expected string
@@ -139,18 +133,15 @@ type testBreakableStruct struct {
 }
 
 func TestCreateBodyFromStruct(t *testing.T) {
-	t.Parallel()
 
-	t.Run("normal operation", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("normal operation", func(*testing.T) {
 
 		in := testNormalStruct{Thing: "something"}
 		_, err := createBodyFromStruct(in)
 		assert.Nil(t, err)
 	})
 
-	t.Run("with invalid input", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("with invalid input", func(*testing.T) {
 
 		f := &testBreakableStruct{Thing: "dongs"}
 		_, err := createBodyFromStruct(f)

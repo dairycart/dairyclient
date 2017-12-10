@@ -18,10 +18,8 @@ import (
 ////////////////////////////////////////////////////////
 
 func TestCreateUser(t *testing.T) {
-	t.Parallel()
 
-	t.Run("normal usage", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("normal usage", func(*testing.T) {
 
 		expectedBody := `
 		{
@@ -75,8 +73,7 @@ func TestCreateUser(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("with failure to execute request", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("with failure to execute request", func(*testing.T) {
 
 		ts := httptest.NewTLSServer(http.NotFoundHandler())
 		c := buildTestClient(t, ts)
@@ -92,8 +89,7 @@ func TestCreateUser(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 
-	t.Run("with bad response", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("with bad response", func(*testing.T) {
 
 		expectedBody := `
 			{
@@ -149,10 +145,8 @@ func buildNotFoundUserResponse(userID uint64) string {
 }
 
 func TestDeleteUser(t *testing.T) {
-	t.Parallel()
 
-	t.Run("normal usage", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("normal usage", func(*testing.T) {
 
 		okID := uint64(1)
 		exampleResponse := fmt.Sprintf(`
@@ -180,8 +174,7 @@ func TestDeleteUser(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("when response contains error", func(_t *testing.T) {
-		_t.Parallel()
+	t.Run("when response contains error", func(*testing.T) {
 
 		badID := uint64(2)
 		handlers := map[string]http.HandlerFunc{

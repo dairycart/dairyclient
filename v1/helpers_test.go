@@ -22,6 +22,7 @@ const (
 	examplePassword = `password` // lol not really
 	exampleSKU      = `sku`
 	exampleBadJSON  = `{"invalid lol}`
+	timeLayout      = "2006-01-02T15:04:05.000000Z"
 )
 
 ////////////////////////////////////////////////////////
@@ -48,6 +49,13 @@ func buildTestClient(t *testing.T, ts *httptest.Server) *dairyclient.V1Client {
 	}
 
 	return c
+}
+
+func loadExampleResponse(t *testing.T, name string) string {
+	t.Helper()
+	data, err := ioutil.ReadFile(fmt.Sprintf("example_responses/%s.json", name))
+	assert.NoError(t, err)
+	return string(data)
 }
 
 func obligatoryLoginHandler(addCookie bool) http.Handler {
@@ -97,45 +105,17 @@ func generateHandler(t *testing.T, expectedBody string, expectedMethod string, r
 }
 
 func generateHeadHandler(t *testing.T, responseHeader int) http.HandlerFunc {
-	handler := generateHandler(
-		t,
-		"",
-		http.MethodHead,
-		"",
-		responseHeader,
-	)
-	return handler
+	return generateHandler(t, "", http.MethodHead, "", responseHeader)
 }
 
 func generateGetHandler(t *testing.T, responseBody string, responseHeader int) http.HandlerFunc {
-	handler := generateHandler(
-		t,
-		"",
-		http.MethodGet,
-		responseBody,
-		responseHeader,
-	)
-	return handler
+	return generateHandler(t, "", http.MethodGet, responseBody, responseHeader)
 }
 
 func generatePostHandler(t *testing.T, expectedBody string, responseBody string, responseHeader int) http.HandlerFunc {
-	handler := generateHandler(
-		t,
-		expectedBody,
-		http.MethodPost,
-		responseBody,
-		responseHeader,
-	)
-	return handler
+	return generateHandler(t, expectedBody, http.MethodPost, responseBody, responseHeader)
 }
 
 func generateDeleteHandler(t *testing.T, responseBody string, responseHeader int) http.HandlerFunc {
-	handler := generateHandler(
-		t,
-		"",
-		http.MethodDelete,
-		responseBody,
-		responseHeader,
-	)
-	return handler
+	return generateHandler(t, "", http.MethodDelete, responseBody, responseHeader)
 }

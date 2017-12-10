@@ -18,7 +18,6 @@ import (
 ////////////////////////////////////////////////////////
 
 func TestNewV1Client(t *testing.T) {
-	t.Parallel()
 
 	t.Run("normal usage", func(t *testing.T) {
 		ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
@@ -55,9 +54,8 @@ func TestNewV1Client(t *testing.T) {
 }
 
 func TestNewV1ClientFromCookie(t *testing.T) {
-	t.Parallel()
 
-	t.Run("normal use", func(_t *testing.T) {
+	t.Run("normal use", func(*testing.T) {
 		ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
 		defer ts.Close()
 
@@ -65,14 +63,13 @@ func TestNewV1ClientFromCookie(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("with invalid URL", func(_t *testing.T) {
+	t.Run("with invalid URL", func(*testing.T) {
 		_, err := dairyclient.NewV1ClientFromCookie(":", &http.Cookie{}, http.DefaultClient)
 		assert.NotNil(t, err)
 	})
 }
 
 func TestBuildURL(t *testing.T) {
-	t.Parallel()
 
 	ts := httptest.NewTLSServer(http.NotFoundHandler())
 	defer ts.Close()

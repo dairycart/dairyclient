@@ -86,17 +86,16 @@ func (dc *V1Client) GetProductRoot(rootID uint64) (*models.ProductRoot, error) {
 	return &r, nil
 }
 
-//func (dc *V1Client) GetProductRoots(queryFilter map[string]string) ([]models.ProductRoot, error) {
-func (dc *V1Client) GetProductRoots(queryFilter map[string]string) (*models.ListResponse, error) {
+func (dc *V1Client) GetProductRoots(queryFilter map[string]string) ([]models.ProductRoot, error) {
 	u := dc.buildURL(queryFilter, "product_roots")
 
-	rl := &models.ListResponse{}
+	rl := &models.ProductRootListResponse{}
 	err := dc.get(u, &rl)
 	if err != nil {
 		return nil, err
 	}
 
-	return rl, nil
+	return rl.ProductRoots, nil
 }
 
 func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
@@ -111,23 +110,23 @@ func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) (*models.ListResponse, error) {
+func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) ([]models.ProductOption, error) {
 	productIDString := convertIDToString(productID)
 	u := dc.buildURL(queryFilter, "product", productIDString, "options")
-	ol := &models.ListResponse{}
+	ol := &models.ProductOptionListResponse{}
 
 	err := dc.get(u, &ol)
 	if err != nil {
 		return nil, err
 	}
 
-	return ol, nil
+	return ol.ProductOptions, nil
 }
 
-func (dc *V1Client) CreateProductOptionForProduct(productID uint64, no models.ProductOption) (*models.ProductOption, error) {
-	productIDString := convertIDToString(productID)
+func (dc *V1Client) CreateProductOption(productRootID uint64, no models.ProductOptionCreationInput) (*models.ProductOption, error) {
+	productRootIDString := convertIDToString(productRootID)
 	o := models.ProductOption{}
-	u := dc.buildURL(nil, "product", productIDString, "options")
+	u := dc.buildURL(nil, "product", productRootIDString, "options")
 
 	err := dc.post(u, no, &o)
 	if err != nil {
