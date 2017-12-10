@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dairycart/dairymodels/v1"
+
 	"github.com/pkg/errors"
 )
 
@@ -107,73 +109,74 @@ func (dc *V1Client) exists(uri string) (bool, error) {
 	req, _ := http.NewRequest(http.MethodHead, uri, nil)
 	res, err := dc.executeRequest(req)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "encountered error executing request")
 	}
 
-	if res.StatusCode == http.StatusOK {
-		return true, nil
-	}
-	return false, nil
+	return res.StatusCode == http.StatusOK, nil
 }
 
-func (dc *V1Client) get(uri string, obj interface{}) error {
+func (dc *V1Client) get(uri string, obj interface{}) *ClientError {
+	ce := &ClientError{}
+
 	if err := interfaceArgIsNotPointerOrNil(obj); err != nil {
-		return err
+		ce.Err = errors.Wrap(err, "struct to load must be a pointer")
+		return ce
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, uri, nil)
 	res, err := dc.executeRequest(req)
 	if err != nil {
-		return err
+		ce.Err = errors.Wrap(err, "encountered error executing request")
+		return ce
 	}
 
-	err = unmarshalBody(res, &obj)
-	if err != nil {
-		return err
-	}
-	return nil
+	return unmarshalBody(res, &obj)
 }
 
-func (dc *V1Client) delete(uri string) error {
+func (dc *V1Client) delete(uri string) *ClientError {
 	req, _ := http.NewRequest(http.MethodDelete, uri, nil)
 	res, err := dc.executeRequest(req)
 	if err != nil {
-		return err
+		return &ClientError{Err: err}
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("user couldn't be deleted, status returned: %d", res.StatusCode)
-	}
-	return nil
+	return unmarshalBody(res, &models.ErrorResponse{})
 }
 
-func (dc *V1Client) makeDataRequest(method string, uri string, in interface{}, out interface{}) error {
+func (dc *V1Client) makeDataRequest(method string, uri string, in interface{}, out interface{}) *ClientError {
+	ce := &ClientError{}
+
 	if err := interfaceArgIsNotPointerOrNil(out); err != nil {
-		return err
+		ce.Err = errors.Wrap(err, "struct to load must be a pointer")
+		return ce
 	}
 
 	body, err := createBodyFromStruct(in)
 	if err != nil {
-		return err
+		ce.Err = errors.Wrap(err, "encountered error marshaling data to JSON")
+		return ce
 	}
 
 	req, _ := http.NewRequest(method, uri, body)
 	res, err := dc.executeRequest(req)
 	if err != nil {
-		return err
+		ce.Err = errors.Wrap(err, "encountered error executing request")
+		return ce
 	}
 
-	err = unmarshalBody(res, &out)
-	if err != nil {
-		return err
+	resErr := unmarshalBody(res, &out)
+	if resErr != nil {
+		ce.Err = errors.Wrap(err, "encountered error loading response from server")
+		return ce
 	}
+
 	return nil
 }
 
-func (dc *V1Client) post(uri string, in interface{}, out interface{}) error {
+func (dc *V1Client) post(uri string, in interface{}, out interface{}) *ClientError {
 	return dc.makeDataRequest(http.MethodPost, uri, in, out)
 }
 
-func (dc *V1Client) patch(uri string, in interface{}, out interface{}) error {
+func (dc *V1Client) patch(uri string, in interface{}, out interface{}) *ClientError {
 	return dc.makeDataRequest(http.MethodPatch, uri, in, out)
 }

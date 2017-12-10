@@ -1,5 +1,9 @@
 package dairyclient
 
+import (
+	"github.com/dairycart/dairymodels/v1"
+)
+
 ////////////////////////////////////////////////////////
 //                                                    //
 //                 Product Functions                  //
@@ -11,9 +15,9 @@ func (dc *V1Client) ProductExists(sku string) (bool, error) {
 	return dc.exists(u)
 }
 
-func (dc *V1Client) GetProduct(sku string) (*Product, error) {
+func (dc *V1Client) GetProduct(sku string) (*models.Product, error) {
 	u := dc.buildURL(nil, "product", sku)
-	p := Product{}
+	p := models.Product{}
 
 	err := dc.get(u, &p)
 	if err != nil {
@@ -22,20 +26,20 @@ func (dc *V1Client) GetProduct(sku string) (*Product, error) {
 	return &p, nil
 }
 
-func (dc *V1Client) GetProducts(queryFilter map[string]string) ([]Product, error) {
+func (dc *V1Client) GetProducts(queryFilter map[string]string) ([]models.Product, error) {
 	u := dc.buildURL(queryFilter, "products")
-	pl := ProductList{}
+	pl := &models.ProductListResponse{}
 
 	err := dc.get(u, &pl)
 	if err != nil {
 		return nil, err
 	}
 
-	return pl.Data, nil
+	return pl.Products, nil
 }
 
-func (dc *V1Client) CreateProduct(np ProductInput) (*Product, error) {
-	p := Product{}
+func (dc *V1Client) CreateProduct(np models.ProductCreationInput) (*models.Product, error) {
+	p := models.Product{}
 	u := dc.buildURL(nil, "product")
 
 	err := dc.post(u, np, &p)
@@ -46,8 +50,8 @@ func (dc *V1Client) CreateProduct(np ProductInput) (*Product, error) {
 	return &p, nil
 }
 
-func (dc *V1Client) UpdateProduct(sku string, up ProductInput) (*Product, error) {
-	p := Product{}
+func (dc *V1Client) UpdateProduct(sku string, up models.Product) (*models.Product, error) {
+	p := models.Product{}
 	u := dc.buildURL(nil, "product", sku)
 
 	err := dc.patch(u, up, &p)
@@ -69,11 +73,11 @@ func (dc *V1Client) DeleteProduct(sku string) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) GetProductRoot(rootID uint64) (*ProductRoot, error) {
+func (dc *V1Client) GetProductRoot(rootID uint64) (*models.ProductRoot, error) {
 	rootIDString := convertIDToString(rootID)
 	u := dc.buildURL(nil, "product_root", rootIDString)
 
-	r := ProductRoot{}
+	r := models.ProductRoot{}
 	err := dc.get(u, &r)
 	if err != nil {
 		return nil, err
@@ -82,15 +86,17 @@ func (dc *V1Client) GetProductRoot(rootID uint64) (*ProductRoot, error) {
 	return &r, nil
 }
 
-func (dc *V1Client) GetProductRoots(queryFilter map[string]string) ([]ProductRoot, error) {
+//func (dc *V1Client) GetProductRoots(queryFilter map[string]string) ([]models.ProductRoot, error) {
+func (dc *V1Client) GetProductRoots(queryFilter map[string]string) (*models.ListResponse, error) {
 	u := dc.buildURL(queryFilter, "product_roots")
-	rl := ProductRootList{}
+
+	rl := &models.ListResponse{}
 	err := dc.get(u, &rl)
 	if err != nil {
 		return nil, err
 	}
 
-	return rl.Data, nil
+	return rl, nil
 }
 
 func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
@@ -105,22 +111,22 @@ func (dc *V1Client) DeleteProductRoot(rootID uint64) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) ([]ProductOption, error) {
+func (dc *V1Client) GetProductOptions(productID uint64, queryFilter map[string]string) (*models.ListResponse, error) {
 	productIDString := convertIDToString(productID)
 	u := dc.buildURL(queryFilter, "product", productIDString, "options")
-	ol := ProductOptionList{}
+	ol := &models.ListResponse{}
 
 	err := dc.get(u, &ol)
 	if err != nil {
 		return nil, err
 	}
 
-	return ol.Data, nil
+	return ol, nil
 }
 
-func (dc *V1Client) CreateProductOptionForProduct(productID uint64, no ProductOption) (*ProductOption, error) {
+func (dc *V1Client) CreateProductOptionForProduct(productID uint64, no models.ProductOption) (*models.ProductOption, error) {
 	productIDString := convertIDToString(productID)
-	o := ProductOption{}
+	o := models.ProductOption{}
 	u := dc.buildURL(nil, "product", productIDString, "options")
 
 	err := dc.post(u, no, &o)
@@ -131,10 +137,10 @@ func (dc *V1Client) CreateProductOptionForProduct(productID uint64, no ProductOp
 	return &o, nil
 }
 
-func (dc *V1Client) UpdateProductOption(optionID uint64, uo ProductOption) (*ProductOption, error) {
+func (dc *V1Client) UpdateProductOption(optionID uint64, uo models.ProductOption) (*models.ProductOption, error) {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_options", optionIDString)
-	o := ProductOption{}
+	o := models.ProductOption{}
 
 	err := dc.patch(u, uo, &o)
 	if err != nil {
@@ -156,10 +162,10 @@ func (dc *V1Client) DeleteProductOption(optionID uint64) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, nv ProductOptionValue) (*ProductOptionValue, error) {
+func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, nv models.ProductOptionValue) (*models.ProductOptionValue, error) {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_options", optionIDString, "value")
-	v := ProductOptionValue{}
+	v := models.ProductOptionValue{}
 
 	err := dc.post(u, nv, &v)
 	if err != nil {
@@ -169,10 +175,10 @@ func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, nv Produc
 	return &v, nil
 }
 
-func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, uv ProductOptionValue) (*ProductOptionValue, error) {
+func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, uv models.ProductOptionValue) (*models.ProductOptionValue, error) {
 	valueIDString := convertIDToString(valueID)
 	u := dc.buildURL(nil, "product_option_values", valueIDString)
-	v := ProductOptionValue{}
+	v := models.ProductOptionValue{}
 
 	err := dc.patch(u, uv, &v)
 	if err != nil {

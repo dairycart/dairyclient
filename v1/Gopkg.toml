@@ -22,6 +22,10 @@
 
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/dairycart/dairymodels"
+
+[[constraint]]
   name = "github.com/pkg/errors"
   version = "0.8.0"
 
@@ -31,4 +35,4 @@
 
 [[constraint]]
   name = "github.com/tdewolff/minify"
-  version = "2.1.0"
+  version = "2.3.4"

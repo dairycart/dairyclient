@@ -10,7 +10,24 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+
+	"github.com/dairycart/dairymodels/v1"
 )
+
+type ClientError struct {
+	Err     error
+	FromAPI *models.ErrorResponse
+}
+
+func (ce *ClientError) Error() string {
+	if ce.Err != nil {
+		return ce.Err.Error()
+	} else if ce.FromAPI != nil {
+		return ce.FromAPI.Error()
+	}
+
+	return ""
+}
 
 ////////////////////////////////////////////////////////
 //                                                    //
@@ -37,20 +54,33 @@ func interfaceArgIsNotPointerOrNil(i interface{}) error {
 	return nil
 }
 
-func unmarshalBody(res *http.Response, dest interface{}) error {
-	// These paths should only ever be reached in tests, an should never be encountered by an end user.
+func unmarshalBody(res *http.Response, dest interface{}) *ClientError {
+	ce := &ClientError{}
+
+	// These paths should only ever be reached in tests, and should never be encountered by an end user.
 	if err := interfaceArgIsNotPointerOrNil(dest); err != nil {
-		return err
+		ce.Err = err
+		return ce
 	}
 
 	bodyBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		ce.Err = err
+		return ce
 	}
 
 	err = json.Unmarshal(bodyBytes, &dest)
 	if err != nil {
-		return err
+		return &ClientError{Err: err}
+	}
+
+	apiErr := &models.ErrorResponse{}
+	err = json.Unmarshal(bodyBytes, &apiErr)
+	if err != nil {
+		return &ClientError{Err: err}
+	}
+	if apiErr.Status != 0 {
+		return &ClientError{FromAPI: apiErr}
 	}
 
 	return nil

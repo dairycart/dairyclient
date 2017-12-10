@@ -33,70 +33,79 @@ type testNormalStruct struct {
 	Thing string `json:"thing"`
 }
 
-func TestUnmarshalBody(t *testing.T) {
-	t.Parallel()
-	exampleInput := &http.Response{
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{"thing":"something"}`)),
-	}
-
-	expected := testNormalStruct{Thing: "something"}
-	actual := testNormalStruct{}
-	err := unmarshalBody(exampleInput, &actual)
-
-	assert.Nil(t, err)
-	assert.Equal(t, expected, actual, "expected and actual unmarshaled structs should match")
-}
-
 type testFailReader struct{}
 
 func (ft testFailReader) Read([]byte) (int, error) {
 	return 0, errors.New("pineapple on pizza")
 }
 
-func TestUnmarshalBodyFailsWhenItReceivesNil(t *testing.T) {
+func TestUnmarshalBody(t *testing.T) {
 	t.Parallel()
-	exampleFailureInput := &http.Response{
-		Body: ioutil.NopCloser(testFailReader{}),
-	}
 
-	err := unmarshalBody(exampleFailureInput, nil)
-	assert.NotNil(t, err)
-	expected := errors.New("unmarshalBody cannot accept nil values")
-	assert.Equal(t, expected, err, "expected error string %s")
-}
+	t.Run("normal operation", func(_t *testing.T) {
+		_t.Parallel()
 
-func TestUnmarshalBodyFailsWhenItReceivesANonPointer(t *testing.T) {
-	t.Parallel()
-	exampleFailureInput := &http.Response{
-		Body: ioutil.NopCloser(testFailReader{}),
-	}
+		exampleInput := &http.Response{
+			Body: ioutil.NopCloser(bytes.NewBufferString(`{"thing":"something"}`)),
+		}
 
-	err := unmarshalBody(exampleFailureInput, testNormalStruct{})
-	assert.NotNil(t, err)
-	expected := errors.New("unmarshalBody can only accept pointers")
-	assert.Equal(t, expected, err, "expected error string %s")
-}
+		expected := testNormalStruct{Thing: "something"}
+		actual := testNormalStruct{}
+		err := unmarshalBody(exampleInput, &actual)
 
-func TestUnmarshalBodyReturnsReadAllError(t *testing.T) {
-	t.Parallel()
-	exampleFailureInput := &http.Response{
-		Body: ioutil.NopCloser(testFailReader{}),
-	}
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual, "expected and actual unmarshaled structs should match")
+	})
 
-	err := unmarshalBody(exampleFailureInput, &testNormalStruct{})
-	assert.NotNil(t, err)
-}
+	t.Run("should fail when receiving nil", func(_t *testing.T) {
+		_t.Parallel()
 
-func TestUnmarshalBodyFailsWithInvalidStruct(t *testing.T) {
-	t.Parallel()
-	exampleInput := &http.Response{
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{"invalid_lol}`)),
-	}
+		exampleFailureInput := &http.Response{
+			Body: ioutil.NopCloser(testFailReader{}),
+		}
 
-	actual := testNormalStruct{}
-	err := unmarshalBody(exampleInput, &actual)
+		err := unmarshalBody(exampleFailureInput, nil)
+		assert.NotNil(t, err)
+		expected := &ClientError{Err: errors.New("unmarshalBody cannot accept nil values")}
+		assert.Equal(t, expected, err, "expected error string %s")
+	})
 
-	assert.NotNil(t, err)
+	t.Run("fails when it receives a non pointer", func(_t *testing.T) {
+		_t.Parallel()
+
+		exampleFailureInput := &http.Response{
+			Body: ioutil.NopCloser(testFailReader{}),
+		}
+
+		err := unmarshalBody(exampleFailureInput, testNormalStruct{})
+		assert.NotNil(t, err)
+		expected := &ClientError{Err: errors.New("unmarshalBody can only accept pointers")}
+		assert.Equal(t, expected, err)
+	})
+
+	t.Run("returns ReadAll error", func(_t *testing.T) {
+		_t.Parallel()
+
+		exampleFailureInput := &http.Response{
+			Body: ioutil.NopCloser(testFailReader{}),
+		}
+
+		err := unmarshalBody(exampleFailureInput, &testNormalStruct{})
+		assert.NotNil(t, err)
+	})
+
+	t.Run("with invalid struct", func(_t *testing.T) {
+		_t.Parallel()
+
+		exampleInput := &http.Response{
+			Body: ioutil.NopCloser(bytes.NewBufferString(`{"invalid_lol}`)),
+		}
+
+		actual := testNormalStruct{}
+		err := unmarshalBody(exampleInput, &actual)
+
+		assert.NotNil(t, err)
+	})
 }
 
 func TestConvertIDToString(t *testing.T) {
@@ -125,20 +134,26 @@ func TestConvertIDToString(t *testing.T) {
 	}
 }
 
-func TestCreateBodyFromStruct(t *testing.T) {
-	t.Parallel()
-	in := testNormalStruct{Thing: "something"}
-	_, err := createBodyFromStruct(in)
-	assert.Nil(t, err)
-}
-
 type testBreakableStruct struct {
 	Thing json.Number `json:"thing"`
 }
 
-func TestCreateBodyFromStructReturnsErrorWithInvalidInput(t *testing.T) {
+func TestCreateBodyFromStruct(t *testing.T) {
 	t.Parallel()
-	f := &testBreakableStruct{Thing: "dongs"}
-	_, err := createBodyFromStruct(f)
-	assert.NotNil(t, err)
+
+	t.Run("normal operation", func(_t *testing.T) {
+		_t.Parallel()
+
+		in := testNormalStruct{Thing: "something"}
+		_, err := createBodyFromStruct(in)
+		assert.Nil(t, err)
+	})
+
+	t.Run("with invalid input", func(_t *testing.T) {
+		_t.Parallel()
+
+		f := &testBreakableStruct{Thing: "dongs"}
+		_, err := createBodyFromStruct(f)
+		assert.NotNil(t, err)
+	})
 }

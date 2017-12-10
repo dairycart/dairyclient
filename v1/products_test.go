@@ -1,17 +1,25 @@
 package dairyclient_test
 
 import (
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dairycart/dairyclient/v1"
+	"github.com/dairycart/dairymodels/v1"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func buildNotFoundProductResponse(sku string) string {
+	return fmt.Sprintf(`
+		{
+			"status": 404,
+			"message": "The product you were looking for (sku '%s') does not exist"
+		}
+	`, sku)
+}
 
 func TestProductExists(t *testing.T) {
 	t.Parallel()
@@ -28,18 +36,17 @@ func TestProductExists(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	t.Run("with existent product", func(*testing.T) {
+	t.Run("with existent product", func(_t *testing.T) {
 		exists, err := c.ProductExists(existentSKU)
 		assert.Nil(t, err)
 		assert.True(t, exists)
 
 	})
 
-	t.Run("with nonexistent product", func(*testing.T) {
+	t.Run("with nonexistent product", func(_t *testing.T) {
 		exists, err := c.ProductExists(nonexistentSKU)
 		assert.Nil(t, err)
 		assert.False(t, exists)
-
 	})
 }
 
@@ -47,6 +54,7 @@ func TestGetProduct(t *testing.T) {
 	t.Parallel()
 
 	goodResponseSKU := "good"
+	nonexistentSKU := "nonexistent"
 	badResponseSKU := "bad"
 
 	exampleResponse := fmt.Sprintf(`
@@ -80,22 +88,23 @@ func TestGetProduct(t *testing.T) {
 	handlers := map[string]http.HandlerFunc{
 		fmt.Sprintf("/v1/product/%s", goodResponseSKU): generateGetHandler(t, exampleResponse, http.StatusOK),
 		fmt.Sprintf("/v1/product/%s", badResponseSKU):  generateGetHandler(t, exampleBadJSON, http.StatusOK),
+		fmt.Sprintf("/v1/product/%s", nonexistentSKU):  generateGetHandler(t, buildNotFoundProductResponse(nonexistentSKU), http.StatusNotFound),
 	}
 
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	t.Run("normal usage", func(*testing.T) {
-		expected := &dairyclient.Product{
+	t.Run("normal usage", func(_t *testing.T) {
+		expected := &models.Product{
 			Name:               "Your Favorite Band's T-Shirt",
-			Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "A t-shirt you can wear", Valid: true}},
+			Subtitle:           "A t-shirt you can wear",
 			Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 			OptionSummary:      "Size: Small, Color: Red",
 			SKU:                goodResponseSKU,
-			UPC:                dairyclient.NullString{NullString: sql.NullString{String: "", Valid: true}},
-			Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "Record Company", Valid: true}},
-			Brand:              dairyclient.NullString{NullString: sql.NullString{String: "Your Favorite Band", Valid: true}},
+			UPC:                "",
+			Manufacturer:       "Record Company",
+			Brand:              "Your Favorite Band",
 			Quantity:           666,
 			QuantityPerPackage: 1,
 			Taxable:            true,
@@ -117,12 +126,17 @@ func TestGetProduct(t *testing.T) {
 		assert.Equal(t, expected, actual, "expected product doesn't match actual product")
 	})
 
-	t.Run("bad response from server", func(*testing.T) {
+	t.Run("nonexistent product", func(_t *testing.T) {
+		_, err := c.GetProduct(nonexistentSKU)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("bad response from server", func(_t *testing.T) {
 		_, err := c.GetProduct(badResponseSKU)
 		assert.NotNil(t, err)
 	})
 
-	t.Run("with request error", func(*testing.T) {
+	t.Run("with request error", func(_t *testing.T) {
 		ts.Close()
 		_, err := c.GetProduct(exampleSKU)
 		assert.NotNil(t, err)
@@ -137,7 +151,7 @@ func TestGetProducts(t *testing.T) {
 			"count": 5,
 			"limit": 25,
 			"page": 1,
-			"data": [{
+			"products": [{
 					"id": 1,
 					"product_root_id": 1,
 					"name": "Your Favorite Band's T-Shirt",
@@ -216,94 +230,83 @@ func TestGetProducts(t *testing.T) {
 		}
 	`
 
-	t.Run("normal usage", func(*testing.T) {
-
-		expected := []dairyclient.Product{
+	t.Run("normal usage", func(_t *testing.T) {
+		expected := []models.Product{
 			{
-				DBRow: dairyclient.DBRow{
-					ID: 1,
-				},
+				ID:                 1,
 				ProductRootID:      1,
 				Name:               "Your Favorite Band's T-Shirt",
-				Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "A t-shirt you can wear", Valid: true}},
+				Subtitle:           "A t-shirt you can wear",
 				Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 				OptionSummary:      "Size: Small, Color: Red",
 				SKU:                "t-shirt-small-red",
-				UPC:                dairyclient.NullString{NullString: sql.NullString{String: "", Valid: false}},
-				Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "Record Company", Valid: true}},
-				Brand:              dairyclient.NullString{NullString: sql.NullString{String: "Your Favorite Band", Valid: true}},
+				UPC:                "",
+				Manufacturer:       "Record Company",
+				Brand:              "Your Favorite Band",
 				Quantity:           666,
 				QuantityPerPackage: 1,
 				Price:              20,
 				Cost:               10,
 			},
 			{
-				DBRow: dairyclient.DBRow{
-					ID: 2,
-				},
+				ID:                 2,
 				ProductRootID:      1,
 				Name:               "Your Favorite Band's T-Shirt",
-				Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "A t-shirt you can wear", Valid: true}},
+				Subtitle:           "A t-shirt you can wear",
 				Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 				OptionSummary:      "Size: Medium, Color: Red",
 				SKU:                "t-shirt-medium-red",
-				UPC:                dairyclient.NullString{NullString: sql.NullString{String: "", Valid: false}},
-				Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "Record Company", Valid: true}},
-				Brand:              dairyclient.NullString{NullString: sql.NullString{String: "Your Favorite Band", Valid: true}},
+				UPC:                "",
+				Manufacturer:       "Record Company",
+				Brand:              "Your Favorite Band",
 				Quantity:           666,
 				QuantityPerPackage: 1,
 				Price:              20,
 				Cost:               10,
 			},
 			{
-				DBRow: dairyclient.DBRow{
-					ID: 3,
-				},
+				ID:                 3,
 				ProductRootID:      1,
 				Name:               "Your Favorite Band's T-Shirt",
-				Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "A t-shirt you can wear", Valid: true}},
+				Subtitle:           "A t-shirt you can wear",
 				Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 				OptionSummary:      "Size: Large, Color: Red",
 				SKU:                "t-shirt-large-red",
-				UPC:                dairyclient.NullString{NullString: sql.NullString{String: "", Valid: false}},
-				Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "Record Company", Valid: true}},
-				Brand:              dairyclient.NullString{NullString: sql.NullString{String: "Your Favorite Band", Valid: true}},
+				UPC:                "",
+				Manufacturer:       "Record Company",
+				Brand:              "Your Favorite Band",
 				Quantity:           666,
 				QuantityPerPackage: 1,
 				Price:              20,
 				Cost:               10,
 			},
 			{
-				DBRow: dairyclient.DBRow{
-					ID: 4,
-				},
+				ID:                 4,
 				ProductRootID:      1,
 				Name:               "Your Favorite Band's T-Shirt",
-				Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "A t-shirt you can wear", Valid: true}},
+				Subtitle:           "A t-shirt you can wear",
 				Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 				OptionSummary:      "Size: Small, Color: Blue",
 				SKU:                "t-shirt-small-blue",
-				UPC:                dairyclient.NullString{NullString: sql.NullString{String: "", Valid: false}},
-				Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "Record Company", Valid: true}},
-				Brand:              dairyclient.NullString{NullString: sql.NullString{String: "Your Favorite Band", Valid: true}},
+				UPC:                "",
+				Manufacturer:       "Record Company",
+				Brand:              "Your Favorite Band",
 				Quantity:           666,
 				QuantityPerPackage: 1,
 				Price:              20,
 				Cost:               10,
 			},
 			{
-				DBRow: dairyclient.DBRow{
-					ID: 5,
-				},
+				ID:                 5,
 				ProductRootID:      1,
 				Name:               "Your Favorite Band's T-Shirt",
-				Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "A t-shirt you can wear", Valid: true}},
+				Subtitle:           "A t-shirt you can wear",
 				Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 				OptionSummary:      "Size: Medium, Color: Blue",
 				SKU:                "t-shirt-medium-blue",
-				UPC:                dairyclient.NullString{NullString: sql.NullString{String: "", Valid: false}},
-				Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "Record Company", Valid: true}},
-				Brand:              dairyclient.NullString{NullString: sql.NullString{String: "Your Favorite Band", Valid: true}},
+				UPC:                "",
+				Manufacturer:       "Record Company",
+				Brand:              "Your Favorite Band",
 				Quantity:           666,
 				QuantityPerPackage: 1,
 				Price:              20,
@@ -323,7 +326,7 @@ func TestGetProducts(t *testing.T) {
 		assert.Equal(t, expected, actual, "expected product doesn't match actual product")
 	})
 
-	t.Run("with bad server response", func(*testing.T) {
+	t.Run("with bad server response", func(_t *testing.T) {
 		handlers := map[string]http.HandlerFunc{
 			"/v1/products": generateGetHandler(t, exampleBadJSON, http.StatusOK),
 		}
@@ -336,7 +339,7 @@ func TestGetProducts(t *testing.T) {
 }
 
 func TestCreateProduct(t *testing.T) {
-	exampleProductCreationInput := dairyclient.ProductInput{
+	exampleProductCreationInput := models.ProductCreationInput{
 		Name:               "name",
 		Subtitle:           "subtitle",
 		Description:        "description",
@@ -359,8 +362,7 @@ func TestCreateProduct(t *testing.T) {
 		QuantityPerPackage: 1,
 	}
 
-	t.Run("normal response", func(*testing.T) {
-
+	t.Run("normal response", func(_t *testing.T) {
 		var normalEndpointCalled bool
 
 		handlers := map[string]http.HandlerFunc{
@@ -372,63 +374,65 @@ func TestCreateProduct(t *testing.T) {
 				assert.Nil(t, err)
 
 				expected := `
-							{
-								"name": "name",
-								"subtitle": "subtitle",
-								"description": "description",
-								"sku": "sku",
-								"upc": "upc",
-								"manufacturer": "manufacturer",
-								"brand": "brand",
-								"quantity": 666,
-								"taxable": false,
-								"price": 20,
-								"on_sale": false,
-								"sale_price": 10,
-								"cost": 1.23,
-								"product_weight": 9,
-								"product_height": 9,
-								"product_width": 9,
-								"product_length": 9,
-								"package_weight": 9,
-								"package_height": 9,
-								"package_width": 9,
-								"package_length": 9,
-								"quantity_per_package": 1,
-								"available_on": "0001-01-01T00:00:00Z",
-								"options": null
-							}
-						`
+					{
+						"product_width": 9,
+						"package_length": 9,
+						"sale_price": 10,
+						"description": "description",
+						"package_weight": 9,
+						"price": 20,
+						"product_weight": 9,
+						"quantity": 666,
+						"product_height": 9,
+						"taxable": false,
+						"brand": "brand",
+						"product_length": 9,
+						"available_on": "0001-01-01T00:00:00Z",
+						"quantity_per_package": 1,
+						"on_sale": false,
+						"name": "name",
+						"sku": "sku",
+						"manufacturer": "manufacturer",
+						"subtitle": "subtitle",
+						"package_width": 9,
+						"cost": 1.23,
+						"package_height": 9,
+						"option_summary": "",
+						"updated_on": null,
+						"upc": "upc",
+						"options": null
+					}
+				`
 				actual := string(bodyBytes)
 				assert.Equal(t, minifyJSON(t, expected), actual, "CreateProduct should attach the correct JSON to the request body")
 
 				exampleResponse := `
-							{
-								"name": "name",
-								"subtitle": "subtitle",
-								"description": "description",
-								"option_summary": "option_summary",
-								"sku": "sku",
-								"upc": "upc",
-								"manufacturer": "manufacturer",
-								"brand": "brand",
-								"quantity": 666,
-								"quantity_per_package": 1,
-								"taxable": false,
-								"price": 20,
-								"on_sale": false,
-								"sale_price": 10,
-								"cost": 1.23,
-								"product_weight": 9,
-								"product_height": 9,
-								"product_width": 9,
-								"product_length": 9,
-								"package_weight": 9,
-								"package_height": 9,
-								"package_width": 9,
-								"package_length": 9
-							}
-						`
+					{
+						"name": "name",
+						"subtitle": "subtitle",
+						"description": "description",
+						"option_summary": "option_summary",
+						"sku": "sku",
+						"upc": "upc",
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"quantity_per_package": 1,
+						"taxable": false,
+						"price": 20,
+						"on_sale": false,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9
+					}
+				`
 				fmt.Fprintf(res, exampleResponse)
 			},
 		}
@@ -437,15 +441,15 @@ func TestCreateProduct(t *testing.T) {
 		defer ts.Close()
 		c := buildTestClient(t, ts)
 
-		expected := &dairyclient.Product{
+		expected := &models.Product{
 			Name:               "name",
-			Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "subtitle", Valid: true}},
+			Subtitle:           "subtitle",
 			Description:        "description",
 			OptionSummary:      "option_summary",
 			SKU:                "sku",
-			UPC:                dairyclient.NullString{NullString: sql.NullString{String: "upc", Valid: true}},
-			Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "manufacturer", Valid: true}},
-			Brand:              dairyclient.NullString{NullString: sql.NullString{String: "brand", Valid: true}},
+			UPC:                "upc",
+			Manufacturer:       "manufacturer",
+			Brand:              "brand",
 			Quantity:           666,
 			Price:              20,
 			SalePrice:          10,
@@ -461,12 +465,13 @@ func TestCreateProduct(t *testing.T) {
 			QuantityPerPackage: 1,
 		}
 		actual, err := c.CreateProduct(exampleProductCreationInput)
+
 		assert.Nil(t, err, "CreateProduct with valid input and response should never produce an error")
 		assert.Equal(t, expected, actual, "expected and actual products should match")
 		assert.True(t, normalEndpointCalled, "the normal endpoint should be called")
 	})
 
-	t.Run("with bad server response", func(*testing.T) {
+	t.Run("with bad server response", func(_t *testing.T) {
 		var badEndpointCalled bool
 		handlers := map[string]http.HandlerFunc{
 			"/v1/product": func(res http.ResponseWriter, req *http.Request) {
@@ -483,11 +488,11 @@ func TestCreateProduct(t *testing.T) {
 		assert.True(t, badEndpointCalled, "the bad response endpoint should be called")
 	})
 
-	t.Run("with request error", func(*testing.T) {
+	t.Run("with request error", func(_t *testing.T) {
 		ts := httptest.NewTLSServer(http.NotFoundHandler())
 		c := buildTestClient(t, ts)
 		ts.Close()
-		_, err := c.CreateProduct(dairyclient.ProductInput{})
+		_, err := c.CreateProduct(models.ProductCreationInput{})
 		assert.NotNil(t, err, "CreateProduct should return an error when faililng to execute a request")
 	})
 }
@@ -495,7 +500,7 @@ func TestCreateProduct(t *testing.T) {
 // Note: this test is basically the same as TestCreateProduct, because those functions are incredibly similar, but with different purposes.
 // I could probably sleep well at night with no tests for this, if only it wouldn't lower my precious coverage number.
 func TestUpdateProduct(t *testing.T) {
-	exampleProductUpdateInput := dairyclient.ProductInput{
+	exampleProductUpdateInput := models.Product{
 		Name:               "name",
 		Subtitle:           "subtitle",
 		Description:        "description",
@@ -518,7 +523,7 @@ func TestUpdateProduct(t *testing.T) {
 		QuantityPerPackage: 1,
 	}
 
-	t.Run("normal response", func(*testing.T) {
+	t.Run("normal response", func(_t *testing.T) {
 		var normalEndpointCalled bool
 
 		handlers := map[string]http.HandlerFunc{
@@ -530,63 +535,68 @@ func TestUpdateProduct(t *testing.T) {
 				assert.Nil(t, err)
 
 				expected := `
-							{
-								"name": "name",
-								"subtitle": "subtitle",
-								"description": "description",
-								"sku": "sku",
-								"upc": "upc",
-								"manufacturer": "manufacturer",
-								"brand": "brand",
-								"quantity": 666,
-								"taxable": false,
-								"price": 20,
-								"on_sale": false,
-								"sale_price": 10,
-								"cost": 1.23,
-								"product_weight": 9,
-								"product_height": 9,
-								"product_width": 9,
-								"product_length": 9,
-								"package_weight": 9,
-								"package_height": 9,
-								"package_width": 9,
-								"package_length": 9,
-								"quantity_per_package": 1,
-								"available_on": "0001-01-01T00:00:00Z",
-								"options": null
-							}
-						`
+					{
+						"product_width": 9,
+						"package_length": 9,
+						"sale_price": 10,
+						"description": "description",
+						"package_weight": 9,
+						"price": 20,
+						"product_weight": 9,
+						"quantity": 666,
+						"product_root_id": 0,
+						"product_height": 9,
+						"taxable": false,
+						"brand": "brand",
+						"product_length": 9,
+						"created_on": "0001-01-01T00:00:00Z",
+						"available_on": "0001-01-01T00:00:00Z",
+						"quantity_per_package": 1,
+						"on_sale": false,
+						"name": "name",
+						"sku": "sku",
+						"manufacturer": "manufacturer",
+						"subtitle": "subtitle",
+						"package_width": 9,
+						"cost": 1.23,
+						"id": 0,
+						"package_height": 9,
+						"archived_on": null,
+						"option_summary": "",
+						"updated_on": null,
+						"upc": "upc"
+					}
+				`
 				actual := string(bodyBytes)
 				assert.Equal(t, minifyJSON(t, expected), actual, "UpdateProduct should attach the correct JSON to the request body")
 
 				exampleResponse := `
-							{
-								"name": "name",
-								"subtitle": "subtitle",
-								"description": "description",
-								"option_summary": "option_summary",
-								"sku": "sku",
-								"upc": "upc",
-								"manufacturer": "manufacturer",
-								"brand": "brand",
-								"quantity": 666,
-								"quantity_per_package": 1,
-								"taxable": false,
-								"price": 20,
-								"on_sale": false,
-								"sale_price": 10,
-								"cost": 1.23,
-								"product_weight": 9,
-								"product_height": 9,
-								"product_width": 9,
-								"product_length": 9,
-								"package_weight": 9,
-								"package_height": 9,
-								"package_width": 9,
-								"package_length": 9
-							}
-						`
+					{
+						"name": "name",
+						"subtitle": "subtitle",
+						"description": "description",
+						"option_summary": "option_summary",
+						"sku": "sku",
+						"upc": "upc",
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"quantity_per_package": 1,
+						"taxable": false,
+						"price": 20,
+						"on_sale": false,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9
+					}
+				`
 				fmt.Fprintf(res, exampleResponse)
 			},
 		}
@@ -595,15 +605,15 @@ func TestUpdateProduct(t *testing.T) {
 		defer ts.Close()
 		c := buildTestClient(t, ts)
 
-		expected := &dairyclient.Product{
+		expected := &models.Product{
 			Name:               "name",
-			Subtitle:           dairyclient.NullString{NullString: sql.NullString{String: "subtitle", Valid: true}},
+			Subtitle:           "subtitle",
 			Description:        "description",
 			OptionSummary:      "option_summary",
 			SKU:                "sku",
-			UPC:                dairyclient.NullString{NullString: sql.NullString{String: "upc", Valid: true}},
-			Manufacturer:       dairyclient.NullString{NullString: sql.NullString{String: "manufacturer", Valid: true}},
-			Brand:              dairyclient.NullString{NullString: sql.NullString{String: "brand", Valid: true}},
+			UPC:                "upc",
+			Manufacturer:       "manufacturer",
+			Brand:              "brand",
 			Quantity:           666,
 			Price:              20,
 			SalePrice:          10,
@@ -624,7 +634,7 @@ func TestUpdateProduct(t *testing.T) {
 		assert.True(t, normalEndpointCalled, "the normal endpoint should be called")
 	})
 
-	t.Run("bad response", func(*testing.T) {
+	t.Run("bad response", func(_t *testing.T) {
 		var badEndpointCalled bool
 		handlers := map[string]http.HandlerFunc{
 			"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
@@ -641,17 +651,73 @@ func TestUpdateProduct(t *testing.T) {
 		assert.True(t, badEndpointCalled, "the bad response endpoint should be called")
 	})
 
-	t.Run("with request error", func(*testing.T) {
+	t.Run("with request error", func(_t *testing.T) {
 		ts := httptest.NewTLSServer(http.NotFoundHandler())
 		c := buildTestClient(t, ts)
 		ts.Close()
-		_, err := c.UpdateProduct(exampleSKU, dairyclient.ProductInput{})
+		_, err := c.UpdateProduct(exampleSKU, models.Product{})
 		assert.NotNil(t, err, "UpdateProduct should return an error when faililng to execute a request")
 	})
 }
 
 func TestDeleteProduct(t *testing.T) {
-	t.Skip()
+	t.Parallel()
+
+	exampleResponseJSON := `
+		{
+			"id": 1,
+			"product_root_id": 1,
+			"name": "New Product",
+			"subtitle": "this is a product",
+			"description": "this product is neat or maybe its not who really knows for sure?",
+			"option_summary": "",
+			"sku": "test-product-updating",
+			"upc": "",
+			"manufacturer": "Manufacturer",
+			"brand": "Brand",
+			"quantity": 123,
+			"taxable": false,
+			"price": 12.34,
+			"on_sale": true,
+			"sale_price": 10,
+			"cost": 5,
+			"product_weight": 9,
+			"product_height": 9,
+			"product_width": 9,
+			"product_length": 9,
+			"package_weight": 9,
+			"package_height": 9,
+			"package_width": 9,
+			"package_length": 9,
+			"quantity_per_package": 3,
+			"available_on": "0001-01-01T00:00:00Z",
+			"created_on": "2017-12-10T06:03:54.394692Z",
+			"updated_on": "",
+			"archived_on": "2017-12-10T06:04:09.779255Z"
+		}
+	`
+
+	existentSKU := "existent_sku"
+	nonexistentSKU := "nonexistent_sku"
+
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product/%s", existentSKU):    generateDeleteHandler(t, exampleResponseJSON, http.StatusOK),
+		fmt.Sprintf("/v1/product/%s", nonexistentSKU): generateDeleteHandler(t, buildNotFoundProductResponse(nonexistentSKU), http.StatusNotFound),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	t.Run("with existent product", func(_t *testing.T) {
+		err := c.DeleteProduct(existentSKU)
+		assert.Nil(t, err)
+	})
+
+	t.Run("with nonexistent product", func(_t *testing.T) {
+		err := c.DeleteProduct(nonexistentSKU)
+		assert.NotNil(t, err)
+	})
 }
 
 func TestGetProductRoot(t *testing.T) {

@@ -36,6 +36,8 @@ func buildTestCookie() *http.Cookie {
 }
 
 func buildTestClient(t *testing.T, ts *httptest.Server) *dairyclient.V1Client {
+	t.Helper()
+
 	u, err := url.Parse(ts.URL)
 	assert.Nil(t, err)
 
@@ -71,6 +73,8 @@ func handlerGenerator(handlers map[string]http.HandlerFunc) http.Handler {
 }
 
 func minifyJSON(t *testing.T, jsonBody string) string {
+	t.Helper()
+
 	jsonMinifier := minify.New()
 	jsonMinifier.AddFunc("application/json", jsonMinify.Minify)
 	minified, err := jsonMinifier.String("application/json", jsonBody)
@@ -80,12 +84,12 @@ func minifyJSON(t *testing.T, jsonBody string) string {
 
 func generateHandler(t *testing.T, expectedBody string, expectedMethod string, responseBody string, responseHeader int) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		t.Helper()
+
 		actualBody, err := ioutil.ReadAll(req.Body)
 		assert.Nil(t, err)
 		assert.Equal(t, minifyJSON(t, expectedBody), string(actualBody), "expected and actual bodies should be equal")
-
 		assert.True(t, req.Method == expectedMethod)
-		// additionalFunc(res, req)
 
 		res.WriteHeader(responseHeader)
 		fmt.Fprintf(res, responseBody)

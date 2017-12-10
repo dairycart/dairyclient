@@ -57,22 +57,23 @@ func TestNewV1Client(t *testing.T) {
 func TestNewV1ClientFromCookie(t *testing.T) {
 	t.Parallel()
 
-	t.Run("normal use", func(*testing.T) {
+	t.Run("normal use", func(_t *testing.T) {
 		ts := httptest.NewTLSServer(obligatoryLoginHandler(true))
 		defer ts.Close()
 
 		_, err := dairyclient.NewV1ClientFromCookie(ts.URL, &http.Cookie{}, ts.Client())
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 	})
 
-	t.Run("with invalid URL", func(*testing.T) {
+	t.Run("with invalid URL", func(_t *testing.T) {
 		_, err := dairyclient.NewV1ClientFromCookie(":", &http.Cookie{}, http.DefaultClient)
-		assert.Error(t, err)
+		assert.NotNil(t, err)
 	})
 }
 
 func TestBuildURL(t *testing.T) {
 	t.Parallel()
+
 	ts := httptest.NewTLSServer(http.NotFoundHandler())
 	defer ts.Close()
 	c := buildTestClient(t, ts)

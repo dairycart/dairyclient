@@ -3,9 +3,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/dairycart/dairycart"
-  packages = ["api/storage/models"]
-  revision = "ab5373439497e3b6f3bbae2a60ff6734029069fe"
+  name = "github.com/dairycart/dairymodels"
+  packages = ["v1"]
+  revision = "6fbb3955fab75a34ffc804f4135dad52581aba2d"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -17,7 +17,7 @@
   branch = "master"
   name = "github.com/lib/pq"
   packages = [".","oid"]
-  revision = "e42267488fe361b9dc034be7a6bffef5b195bceb"
+  revision = "83612a56d3dd153a94a629cd64925371c9adad78"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -38,32 +38,20 @@
   version = "v1.1.4"
 
 [[projects]]
-  name = "github.com/tdewolff/buffer"
-  packages = ["."]
-  revision = "43cef5ba7b6ce99cc410632dad46cf1c6c97026e"
-  version = "v1.0.0"
-
-[[projects]]
   name = "github.com/tdewolff/minify"
   packages = [".","json"]
-  revision = "bf4ffcc476fdee34561726f5b5523dc0f87a707a"
-  version = "v2.1.0"
+  revision = "222672169d634c440a73abc47685074e1a9daa60"
+  version = "v2.3.4"
 
 [[projects]]
   name = "github.com/tdewolff/parse"
-  packages = [".","json"]
-  revision = "70d04d8c1ad44f8f9e435a056f276910cb1f29bf"
-  version = "v2.1.0"
-
-[[projects]]
-  name = "github.com/tdewolff/strconv"
-  packages = ["."]
-  revision = "3e8091f4417ebaaa3910da63a45ea394ebbfb0e3"
-  version = "v1.0.0"
+  packages = [".","buffer","json","strconv"]
+  revision = "639f6272aec6b52094db77b9ec488214b0b4b1a1"
+  version = "v2.3.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5213aad7684fdde8e437fb3b58805996496821786c1a16514d3d3e2bccf05d95"
+  inputs-digest = "d31d78cee0bb7c33c39a569fb1e3fbb24b2efcb24772149609db7b05870ba4c5"
   solver-name = "gps-cdcl"
   solver-version = 1
