@@ -12,11 +12,31 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/dairycart/dairymodels/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMapToQueryValues(t *testing.T) {
+func TestClientError(t *testing.T) {
+	t.Run("with error", func(*testing.T) {
+		expected := "arbitrary error"
+		ce := &ClientError{Err: errors.New(expected)}
+		assert.Equal(t, expected, ce.Error(), "expected and actual error messages should be equal")
+	})
 
+	t.Run("with API error", func(*testing.T) {
+		expected := "arbitrary error"
+		ce := &ClientError{FromAPI: &models.ErrorResponse{Message: expected}}
+		assert.Equal(t, expected, ce.Error(), "expected and actual error messages should be equal")
+	})
+
+	t.Run("without error", func(*testing.T) {
+		ce := &ClientError{}
+		assert.Empty(t, ce.Error())
+	})
+}
+
+func TestMapToQueryValues(t *testing.T) {
 	exampleQueryParams := map[string]string{
 		"param": "value",
 	}
@@ -40,10 +60,9 @@ func (ft testFailReader) Read([]byte) (int, error) {
 }
 
 func TestUnmarshalBody(t *testing.T) {
-
 	t.Run("normal operation", func(*testing.T) {
-
 		exampleInput := &http.Response{
+			StatusCode: http.StatusOK,
 			Body: ioutil.NopCloser(bytes.NewBufferString(`{"thing":"something"}`)),
 		}
 
@@ -56,8 +75,8 @@ func TestUnmarshalBody(t *testing.T) {
 	})
 
 	t.Run("should fail when receiving nil", func(*testing.T) {
-
 		exampleFailureInput := &http.Response{
+			StatusCode: http.StatusOK,
 			Body: ioutil.NopCloser(testFailReader{}),
 		}
 
@@ -68,8 +87,8 @@ func TestUnmarshalBody(t *testing.T) {
 	})
 
 	t.Run("fails when it receives a non pointer", func(*testing.T) {
-
 		exampleFailureInput := &http.Response{
+			StatusCode: http.StatusOK,
 			Body: ioutil.NopCloser(testFailReader{}),
 		}
 
@@ -80,8 +99,8 @@ func TestUnmarshalBody(t *testing.T) {
 	})
 
 	t.Run("returns ReadAll error", func(*testing.T) {
-
 		exampleFailureInput := &http.Response{
+			StatusCode: http.StatusOK,
 			Body: ioutil.NopCloser(testFailReader{}),
 		}
 
@@ -90,8 +109,8 @@ func TestUnmarshalBody(t *testing.T) {
 	})
 
 	t.Run("with invalid struct", func(*testing.T) {
-
 		exampleInput := &http.Response{
+			StatusCode: http.StatusOK,
 			Body: ioutil.NopCloser(bytes.NewBufferString(`{"invalid_lol}`)),
 		}
 
@@ -103,7 +122,6 @@ func TestUnmarshalBody(t *testing.T) {
 }
 
 func TestConvertIDToString(t *testing.T) {
-
 	testCases := []struct {
 		input    uint64
 		expected string
@@ -133,7 +151,6 @@ type testBreakableStruct struct {
 }
 
 func TestCreateBodyFromStruct(t *testing.T) {
-
 	t.Run("normal operation", func(*testing.T) {
 
 		in := testNormalStruct{Thing: "something"}

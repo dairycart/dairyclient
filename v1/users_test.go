@@ -18,34 +18,29 @@ import (
 ////////////////////////////////////////////////////////
 
 func TestCreateUser(t *testing.T) {
+	exampleInput := models.UserCreationInput{
+		FirstName: "First",
+		LastName:  "Last",
+		Email:     "email@address.com",
+	}
 
 	t.Run("normal usage", func(*testing.T) {
-
 		expectedBody := `
-		{
-			"email": "email@address.com",
-			"created_on": "0001-01-01T00:00:00Z",
-			"archived_on": null,
-			"first_name": "First",
-			"updated_on": null,
-			"id": 0,
-			"username": "",
-			"password_last_changed_on": null,
-			"salt": null,
-			"last_name": "Last",
-			"is_admin": false,
-			"password": ""
-		}
-	`
+			{
+				"first_name": "First",
+				"last_name": "Last",
+				"email": "email@address.com"
+			}
+		`
 		responseBody := `
-		{
-			"id": 1,
-			"first_name": "First",
-			"last_name": "Last",
-			"email": "email@address.com",
-			"is_admin": false
-		}
-	`
+			{
+				"id": 1,
+				"first_name": "First",
+				"last_name": "Last",
+				"email": "email@address.com",
+				"is_admin": false
+			}
+		`
 
 		handlers := map[string]http.HandlerFunc{
 			"/v1/user": generatePostHandler(t, expectedBody, responseBody, http.StatusOK),
@@ -54,12 +49,6 @@ func TestCreateUser(t *testing.T) {
 		ts := httptest.NewTLSServer(handlerGenerator(handlers))
 		defer ts.Close()
 		c := buildTestClient(t, ts)
-
-		exampleInput := models.User{
-			FirstName: "First",
-			LastName:  "Last",
-			Email:     "email@address.com",
-		}
 
 		expected := &models.User{
 			ID:        1,
@@ -79,32 +68,17 @@ func TestCreateUser(t *testing.T) {
 		c := buildTestClient(t, ts)
 		ts.Close()
 
-		exampleInput := models.User{
-			FirstName: "First",
-			LastName:  "Last",
-			Email:     "email@address.com",
-		}
 		_, err := c.CreateUser(exampleInput)
 
 		assert.NotNil(t, err)
 	})
 
 	t.Run("with bad response", func(*testing.T) {
-
 		expectedBody := `
 			{
-				"email": "email@address.com",
-				"created_on": "0001-01-01T00:00:00Z",
-				"archived_on": null,
 				"first_name": "First",
-				"updated_on": null,
-				"id": 0,
-				"username": "",
-				"password_last_changed_on": null,
-				"salt": null,
 				"last_name": "Last",
-				"is_admin": false,
-				"password": ""
+				"email": "email@address.com"
 			}
 		`
 		badResponse := `
@@ -124,12 +98,6 @@ func TestCreateUser(t *testing.T) {
 		defer ts.Close()
 		c := buildTestClient(t, ts)
 
-		exampleInput := models.User{
-			FirstName: "First",
-			LastName:  "Last",
-			Email:     "email@address.com",
-		}
-
 		_, err := c.CreateUser(exampleInput)
 		assert.NotNil(t, err)
 	})
@@ -145,9 +113,7 @@ func buildNotFoundUserResponse(userID uint64) string {
 }
 
 func TestDeleteUser(t *testing.T) {
-
 	t.Run("normal usage", func(*testing.T) {
-
 		okID := uint64(1)
 		exampleResponse := fmt.Sprintf(`
 			{
@@ -175,7 +141,6 @@ func TestDeleteUser(t *testing.T) {
 	})
 
 	t.Run("when response contains error", func(*testing.T) {
-
 		badID := uint64(2)
 		handlers := map[string]http.HandlerFunc{
 			fmt.Sprintf("/v1/user/%d", badID): generateDeleteHandler(t, buildNotFoundUserResponse(badID), http.StatusNotFound),

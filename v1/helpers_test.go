@@ -116,6 +116,10 @@ func generatePostHandler(t *testing.T, expectedBody string, responseBody string,
 	return generateHandler(t, expectedBody, http.MethodPost, responseBody, responseHeader)
 }
 
+func generatePatchHandler(t *testing.T, expectedBody string, responseBody string, responseHeader int) http.HandlerFunc {
+	return generateHandler(t, expectedBody, http.MethodPatch, responseBody, responseHeader)
+}
+
 func generateDeleteHandler(t *testing.T, responseBody string, responseHeader int) http.HandlerFunc {
 	return generateHandler(t, "", http.MethodDelete, responseBody, responseHeader)
 }

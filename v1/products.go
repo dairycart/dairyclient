@@ -50,7 +50,7 @@ func (dc *V1Client) CreateProduct(np models.ProductCreationInput) (*models.Produ
 	return &p, nil
 }
 
-func (dc *V1Client) UpdateProduct(sku string, up models.Product) (*models.Product, error) {
+func (dc *V1Client) UpdateProduct(sku string, up models.ProductUpdateInput) (*models.Product, error) {
 	p := models.Product{}
 	u := dc.buildURL(nil, "product", sku)
 
@@ -136,7 +136,7 @@ func (dc *V1Client) CreateProductOption(productRootID uint64, no models.ProductO
 	return &o, nil
 }
 
-func (dc *V1Client) UpdateProductOption(optionID uint64, uo models.ProductOption) (*models.ProductOption, error) {
+func (dc *V1Client) UpdateProductOption(optionID uint64, uo models.ProductOptionUpdateInput) (*models.ProductOption, error) {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_options", optionIDString)
 	o := models.ProductOption{}
@@ -161,7 +161,7 @@ func (dc *V1Client) DeleteProductOption(optionID uint64) error {
 //                                                    //
 ////////////////////////////////////////////////////////
 
-func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, nv models.ProductOptionValue) (*models.ProductOptionValue, error) {
+func (dc *V1Client) CreateProductOptionValue(optionID uint64, nv models.ProductOptionValueCreationInput) (*models.ProductOptionValue, error) {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_options", optionIDString, "value")
 	v := models.ProductOptionValue{}
@@ -174,7 +174,7 @@ func (dc *V1Client) CreateProductOptionValueForOption(optionID uint64, nv models
 	return &v, nil
 }
 
-func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, uv models.ProductOptionValue) (*models.ProductOptionValue, error) {
+func (dc *V1Client) UpdateProductOptionValue(valueID uint64, uv models.ProductOptionValueUpdateInput) (*models.ProductOptionValue, error) {
 	valueIDString := convertIDToString(valueID)
 	u := dc.buildURL(nil, "product_option_values", valueIDString)
 	v := models.ProductOptionValue{}
@@ -187,7 +187,7 @@ func (dc *V1Client) UpdateProductOptionValueForOption(valueID uint64, uv models.
 	return &v, nil
 }
 
-func (dc *V1Client) DeleteProductOptionValueForOption(optionID uint64) error {
+func (dc *V1Client) DeleteProductOptionValue(optionID uint64) error {
 	optionIDString := convertIDToString(optionID)
 	u := dc.buildURL(nil, "product_option_values", optionIDString)
 	return dc.delete(u)

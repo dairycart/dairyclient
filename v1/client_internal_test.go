@@ -222,18 +222,12 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-
-	var normalEndpointCalled bool
-	var fiveHundredEndpointCalled bool
-
 	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
 		"/v1/normal": func(res http.ResponseWriter, req *http.Request) {
-			normalEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodDelete, "delete should be making DELETE requests")
 			fmt.Fprintf(res, "{}")
 		},
 		"/v1/five_hundred": func(res http.ResponseWriter, req *http.Request) {
-			fiveHundredEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodDelete, "delete should be making DELETE requests")
 			res.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(res, `
@@ -251,14 +245,12 @@ func TestDelete(t *testing.T) {
 	t.Run("normal usage", func(t *testing.T) {
 		err := c.delete(c.buildURL(nil, "normal"))
 		assert.Nil(t, err)
-		assert.True(t, normalEndpointCalled, "endpoint should have been called")
 	})
 
 	t.Run("bad status code", func(t *testing.T) {
 		u := c.buildURL(nil, "five_hundred")
 		err := c.delete(u)
 		assert.NotNil(t, err)
-		assert.True(t, fiveHundredEndpointCalled, "endpoint should have been called")
 	})
 
 	t.Run("failed request", func(t *testing.T) {
@@ -269,29 +261,19 @@ func TestDelete(t *testing.T) {
 }
 
 func TestMakeDataRequest(t *testing.T) {
-
-	var normalEndpointCalled bool
-	var badJSONEndpointCalled bool
-
 	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
 		"/v1/whatever": func(res http.ResponseWriter, req *http.Request) {
-			normalEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodPost, "makeDataRequest should only be making PUT or POST requests")
+			exampleResponse := `{"things":"stuff"}`
 
 			bodyBytes, err := ioutil.ReadAll(req.Body)
 			assert.Nil(t, err)
 			requestBody := string(bodyBytes)
-			assert.Equal(t, requestBody, `{"things":"stuff"}`, "makeDataRequest should attach the correct JSON to the request body")
+			assert.Equal(t, requestBody, exampleResponse, "makeDataRequest should attach the correct JSON to the request body")
 
-			exampleResponse := `
-				{
-					"things": "stuff"
-				}
-			`
 			fmt.Fprintf(res, exampleResponse)
 		},
 		"/v1/bad_json": func(res http.ResponseWriter, req *http.Request) {
-			badJSONEndpointCalled = true
 			fmt.Fprintf(res, exampleBadJSON)
 		},
 	}
@@ -313,7 +295,6 @@ func TestMakeDataRequest(t *testing.T) {
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), expected, &actual)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual, "actual struct should equal expected struct")
-		assert.True(t, normalEndpointCalled, "endpoint should have been called")
 	})
 
 	t.Run("nil argument", func(*testing.T) {
@@ -345,7 +326,6 @@ func TestMakeDataRequest(t *testing.T) {
 
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "bad_json"), expected, &actual)
 		assert.NotNil(t, err)
-		assert.True(t, badJSONEndpointCalled, "endpoint should have been called")
 	})
 
 	t.Run("failed request", func(*testing.T) {

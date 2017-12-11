@@ -13,7 +13,7 @@ import (
 ////////////////////////////////////////////////////////
 
 // CreateUser takes a UserCreationInput and creates the user in Dairycart
-func (dc *V1Client) CreateUser(nu models.User) (*models.User, error) {
+func (dc *V1Client) CreateUser(nu models.UserCreationInput) (*models.User, error) {
 	u := dc.buildURL(nil, "user")
 	body, _ := createBodyFromStruct(nu)
 

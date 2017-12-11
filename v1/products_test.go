@@ -54,33 +54,7 @@ func TestGetProduct(t *testing.T) {
 	nonexistentSKU := "nonexistent"
 	badResponseSKU := "bad"
 
-	exampleResponse := fmt.Sprintf(`
-		{
-			"name": "Your Favorite Band's T-Shirt",
-			"subtitle": "A t-shirt you can wear",
-			"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-			"option_summary": "Size: Small, Color: Red",
-			"sku": "%s",
-			"upc": "",
-			"manufacturer": "Record Company",
-			"brand": "Your Favorite Band",
-			"quantity": 666,
-			"quantity_per_package": 1,
-			"taxable": true,
-			"price": 20,
-			"on_sale": false,
-			"sale_price": 0,
-			"cost": 10,
-			"product_weight": 1,
-			"product_height": 5,
-			"product_width": 5,
-			"product_length": 5,
-			"package_weight": 1,
-			"package_height": 5,
-			"package_width": 5,
-			"package_length": 5
-		}
-	`, goodResponseSKU)
+	exampleResponse := loadExampleResponse(t, "product")
 
 	handlers := map[string]http.HandlerFunc{
 		fmt.Sprintf("/v1/product/%s", goodResponseSKU): generateGetHandler(t, exampleResponse, http.StatusOK),
@@ -98,7 +72,7 @@ func TestGetProduct(t *testing.T) {
 			Subtitle:           "A t-shirt you can wear",
 			Description:        "Wear this if you'd like. Or don't, I'm not in charge of your actions",
 			OptionSummary:      "Size: Small, Color: Red",
-			SKU:                goodResponseSKU,
+			SKU:                "sku",
 			UPC:                "",
 			Manufacturer:       "Record Company",
 			Brand:              "Your Favorite Band",
@@ -141,89 +115,7 @@ func TestGetProduct(t *testing.T) {
 }
 
 func TestGetProducts(t *testing.T) {
-	exampleGoodResponse := `
-		{
-			"count": 5,
-			"limit": 25,
-			"page": 1,
-			"products": [{
-					"id": 1,
-					"product_root_id": 1,
-					"name": "Your Favorite Band's T-Shirt",
-					"subtitle": "A t-shirt you can wear",
-					"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-					"option_summary": "Size: Small, Color: Red",
-					"sku": "t-shirt-small-red",
-					"manufacturer": "Record Company",
-					"brand": "Your Favorite Band",
-					"quantity": 666,
-					"quantity_per_package": 1,
-					"price": 20,
-					"cost": 10
-				},
-				{
-					"id": 2,
-					"product_root_id": 1,
-					"name": "Your Favorite Band's T-Shirt",
-					"subtitle": "A t-shirt you can wear",
-					"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-					"option_summary": "Size: Medium, Color: Red",
-					"sku": "t-shirt-medium-red",
-					"manufacturer": "Record Company",
-					"brand": "Your Favorite Band",
-					"quantity": 666,
-					"quantity_per_package": 1,
-					"price": 20,
-					"cost": 10
-				},
-				{
-					"id": 3,
-					"product_root_id": 1,
-					"name": "Your Favorite Band's T-Shirt",
-					"subtitle": "A t-shirt you can wear",
-					"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-					"option_summary": "Size: Large, Color: Red",
-					"sku": "t-shirt-large-red",
-					"manufacturer": "Record Company",
-					"brand": "Your Favorite Band",
-					"quantity": 666,
-					"quantity_per_package": 1,
-					"price": 20,
-					"cost": 10
-				},
-				{
-					"id": 4,
-					"product_root_id": 1,
-					"name": "Your Favorite Band's T-Shirt",
-					"subtitle": "A t-shirt you can wear",
-					"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-					"option_summary": "Size: Small, Color: Blue",
-					"sku": "t-shirt-small-blue",
-					"manufacturer": "Record Company",
-					"brand": "Your Favorite Band",
-					"quantity": 666,
-					"quantity_per_package": 1,
-					"price": 20,
-					"cost": 10
-				},
-				{
-					"id": 5,
-					"product_root_id": 1,
-					"name": "Your Favorite Band's T-Shirt",
-					"subtitle": "A t-shirt you can wear",
-					"description": "Wear this if you'd like. Or don't, I'm not in charge of your actions",
-					"option_summary": "Size: Medium, Color: Blue",
-					"sku": "t-shirt-medium-blue",
-					"manufacturer": "Record Company",
-					"brand": "Your Favorite Band",
-					"quantity": 666,
-					"quantity_per_package": 1,
-					"price": 20,
-					"cost": 10
-				}
-			]
-		}
-	`
+	exampleGoodResponse := loadExampleResponse(t, "products")
 
 	t.Run("normal usage", func(*testing.T) {
 		expected := []models.Product{
@@ -370,64 +262,32 @@ func TestCreateProduct(t *testing.T) {
 
 				expected := `
 					{
-						"product_width": 9,
-						"package_length": 9,
-						"sale_price": 10,
-						"description": "description",
-						"package_weight": 9,
-						"price": 20,
-						"product_weight": 9,
-						"quantity": 666,
-						"product_height": 9,
-						"taxable": false,
-						"brand": "brand",
-						"product_length": 9,
-						"available_on": "0001-01-01T00:00:00Z",
-						"quantity_per_package": 1,
-						"on_sale": false,
 						"name": "name",
-						"sku": "sku",
-						"manufacturer": "manufacturer",
 						"subtitle": "subtitle",
-						"package_width": 9,
-						"cost": 1.23,
-						"package_height": 9,
-						"option_summary": "",
-						"updated_on": null,
+						"description": "description",
+						"sku": "sku",
 						"upc": "upc",
-						"options": null
+						"manufacturer": "manufacturer",
+						"brand": "brand",
+						"quantity": 666,
+						"price": 20,
+						"sale_price": 10,
+						"cost": 1.23,
+						"product_weight": 9,
+						"product_height": 9,
+						"product_width": 9,
+						"product_length": 9,
+						"package_weight": 9,
+						"package_height": 9,
+						"package_width": 9,
+						"package_length": 9,
+						"quantity_per_package": 1
 					}
 				`
 				actual := string(bodyBytes)
 				assert.Equal(t, minifyJSON(t, expected), actual, "CreateProduct should attach the correct JSON to the request body")
 
-				exampleResponse := `
-					{
-						"name": "name",
-						"subtitle": "subtitle",
-						"description": "description",
-						"option_summary": "option_summary",
-						"sku": "sku",
-						"upc": "upc",
-						"manufacturer": "manufacturer",
-						"brand": "brand",
-						"quantity": 666,
-						"quantity_per_package": 1,
-						"taxable": false,
-						"price": 20,
-						"on_sale": false,
-						"sale_price": 10,
-						"cost": 1.23,
-						"product_weight": 9,
-						"product_height": 9,
-						"product_width": 9,
-						"product_length": 9,
-						"package_weight": 9,
-						"package_height": 9,
-						"package_width": 9,
-						"package_length": 9
-					}
-				`
+				exampleResponse := loadExampleResponse(t, "created_product")
 				fmt.Fprintf(res, exampleResponse)
 			},
 		}
@@ -495,7 +355,7 @@ func TestCreateProduct(t *testing.T) {
 // Note: this test is basically the same as TestCreateProduct, because those functions are incredibly similar, but with different purposes.
 // I could probably sleep well at night with no tests for this, if only it wouldn't lower my precious coverage number.
 func TestUpdateProduct(t *testing.T) {
-	exampleProductUpdateInput := models.Product{
+	exampleProductUpdateInput := models.ProductUpdateInput{
 		Name:               "name",
 		Subtitle:           "subtitle",
 		Description:        "description",
@@ -522,6 +382,7 @@ func TestUpdateProduct(t *testing.T) {
 		var normalEndpointCalled bool
 
 		handlers := map[string]http.HandlerFunc{
+			// UPGRADEME
 			"/v1/product/sku": func(res http.ResponseWriter, req *http.Request) {
 				normalEndpointCalled = true
 				assert.Equal(t, req.Method, http.MethodPatch, "UpdateProduct should only be making PATCH requests")
@@ -531,55 +392,15 @@ func TestUpdateProduct(t *testing.T) {
 
 				expected := `
 					{
-						"product_width": 9,
-						"package_length": 9,
-						"sale_price": 10,
-						"description": "description",
-						"package_weight": 9,
-						"price": 20,
-						"product_weight": 9,
-						"quantity": 666,
-						"product_root_id": 0,
-						"product_height": 9,
-						"taxable": false,
-						"brand": "brand",
-						"product_length": 9,
-						"created_on": "0001-01-01T00:00:00Z",
-						"available_on": "0001-01-01T00:00:00Z",
-						"quantity_per_package": 1,
-						"on_sale": false,
-						"name": "name",
-						"sku": "sku",
-						"manufacturer": "manufacturer",
-						"subtitle": "subtitle",
-						"package_width": 9,
-						"cost": 1.23,
-						"id": 0,
-						"package_height": 9,
-						"archived_on": null,
-						"option_summary": "",
-						"updated_on": null,
-						"upc": "upc"
-					}
-				`
-				actual := string(bodyBytes)
-				assert.Equal(t, minifyJSON(t, expected), actual, "UpdateProduct should attach the correct JSON to the request body")
-
-				exampleResponse := `
-					{
 						"name": "name",
 						"subtitle": "subtitle",
 						"description": "description",
-						"option_summary": "option_summary",
 						"sku": "sku",
 						"upc": "upc",
 						"manufacturer": "manufacturer",
 						"brand": "brand",
 						"quantity": 666,
-						"quantity_per_package": 1,
-						"taxable": false,
 						"price": 20,
-						"on_sale": false,
 						"sale_price": 10,
 						"cost": 1.23,
 						"product_weight": 9,
@@ -589,9 +410,14 @@ func TestUpdateProduct(t *testing.T) {
 						"package_weight": 9,
 						"package_height": 9,
 						"package_width": 9,
-						"package_length": 9
+						"package_length": 9,
+						"quantity_per_package": 1
 					}
 				`
+				actual := string(bodyBytes)
+				assert.Equal(t, minifyJSON(t, expected), actual, "UpdateProduct should attach the correct JSON to the request body")
+
+				exampleResponse := loadExampleResponse(t, "updated_product")
 				fmt.Fprintf(res, exampleResponse)
 			},
 		}
@@ -650,45 +476,13 @@ func TestUpdateProduct(t *testing.T) {
 		ts := httptest.NewTLSServer(http.NotFoundHandler())
 		c := buildTestClient(t, ts)
 		ts.Close()
-		_, err := c.UpdateProduct(exampleSKU, models.Product{})
+		_, err := c.UpdateProduct(exampleSKU, models.ProductUpdateInput{})
 		assert.NotNil(t, err, "UpdateProduct should return an error when faililng to execute a request")
 	})
 }
 
 func TestDeleteProduct(t *testing.T) {
-	exampleResponseJSON := `
-		{
-			"id": 1,
-			"product_root_id": 1,
-			"name": "New Product",
-			"subtitle": "this is a product",
-			"description": "this product is neat or maybe its not who really knows for sure?",
-			"option_summary": "",
-			"sku": "test-product-updating",
-			"upc": "",
-			"manufacturer": "Manufacturer",
-			"brand": "Brand",
-			"quantity": 123,
-			"taxable": false,
-			"price": 12.34,
-			"on_sale": true,
-			"sale_price": 10,
-			"cost": 5,
-			"product_weight": 9,
-			"product_height": 9,
-			"product_width": 9,
-			"product_length": 9,
-			"package_weight": 9,
-			"package_height": 9,
-			"package_width": 9,
-			"package_length": 9,
-			"quantity_per_package": 3,
-			"available_on": "0001-01-01T00:00:00Z",
-			"created_on": "2017-12-10T06:03:54.394692Z",
-			"updated_on": "",
-			"archived_on": "2017-12-10T06:04:09.779255Z"
-		}
-	`
+	exampleResponseJSON := loadExampleResponse(t, "deleted_product")
 
 	existentSKU := "existent_sku"
 	nonexistentSKU := "nonexistent_sku"
@@ -713,120 +507,122 @@ func TestDeleteProduct(t *testing.T) {
 	})
 }
 
-func compareProductOptionValues(t *testing.T, expected, actual models.ProductOptionValue, optionIndex, optionValueIndex int) {
-	assert.Equal(t, expected.Value, actual.Value, "expected and actual Value for option value %d (option %d) should match", optionValueIndex, optionIndex)
-	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
-	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID for option value %d (option %d) should match", optionValueIndex, optionIndex)
-	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
-	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
-	assert.Equal(t, expected.ProductOptionID, actual.ProductOptionID, "expected and actual ProductOptionID for option value %d (option %d) should match", optionValueIndex, optionIndex)
-}
+/*
+	// func compareProductOptionValues(t *testing.T, expected, actual models.ProductOptionValue, optionIndex, optionValueIndex int) {
+	// 	assert.Equal(t, expected.Value, actual.Value, "expected and actual Value for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	// 	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	// 	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	// 	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	// 	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	// 	assert.Equal(t, expected.ProductOptionID, actual.ProductOptionID, "expected and actual ProductOptionID for option value %d (option %d) should match", optionValueIndex, optionIndex)
+	// }
 
-func compareProductOptions(t *testing.T, expected, actual models.ProductOption, optionIndex int) {
-	assert.Equal(t, expected.ProductRootID, actual.ProductRootID, "expected and actual ProductRootID for option %d should match", optionIndex)
-	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn for option %d should match", optionIndex)
-	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID for option %d should match", optionIndex)
-	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn for option %d should match", optionIndex)
-	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn for option %d should match", optionIndex)
-	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name for option %d should match", optionIndex)
+	// func compareProductOptions(t *testing.T, expected, actual models.ProductOption, optionIndex int) {
+	// 	assert.Equal(t, expected.ProductRootID, actual.ProductRootID, "expected and actual ProductRootID for option %d should match", optionIndex)
+	// 	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn for option %d should match", optionIndex)
+	// 	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID for option %d should match", optionIndex)
+	// 	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn for option %d should match", optionIndex)
+	// 	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn for option %d should match", optionIndex)
+	// 	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name for option %d should match", optionIndex)
 
-	for i := range expected.Values {
-		if len(actual.Values)-1 < i {
-			t.Logf("expected %d option values, got %d instead.", len(expected.Values), len(actual.Values))
-			t.Fail()
-			break
-		}
-		compareProductOptionValues(t, expected.Values[i], actual.Values[i], optionIndex, i)
-	}
-}
+	// 	for i := range expected.Values {
+	// 		if len(actual.Values)-1 < i {
+	// 			t.Logf("expected %d option values, got %d instead.", len(expected.Values), len(actual.Values))
+	// 			t.Fail()
+	// 			break
+	// 		}
+	// 		compareProductOptionValues(t, expected.Values[i], actual.Values[i], optionIndex, i)
+	// 	}
+	// }
 
-func compareProductRoots(t *testing.T, expected, actual *models.ProductRoot) {
-	t.Helper()
-	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID should match")
-	assert.Equal(t, expected.AvailableOn, actual.AvailableOn, "expected and actual AvailableOn should match")
-	assert.Equal(t, expected.ProductLength, actual.ProductLength, "expected and actual ProductLength should match")
-	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn should match")
-	assert.Equal(t, expected.SKUPrefix, actual.SKUPrefix, "expected and actual SKUPrefix should match")
-	assert.Equal(t, expected.PackageHeight, actual.PackageHeight, "expected and actual PackageHeight should match")
-	assert.Equal(t, expected.ProductWeight, actual.ProductWeight, "expected and actual ProductWeight should match")
-	assert.Equal(t, expected.ProductWidth, actual.ProductWidth, "expected and actual ProductWidth should match")
-	assert.Equal(t, expected.QuantityPerPackage, actual.QuantityPerPackage, "expected and actual QuantityPerPackage should match")
-	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name should match")
-	assert.Equal(t, expected.ProductHeight, actual.ProductHeight, "expected and actual ProductHeight should match")
-	assert.Equal(t, expected.PackageLength, actual.PackageLength, "expected and actual PackageLength should match")
-	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn should match")
-	assert.Equal(t, expected.Cost, actual.Cost, "expected and actual Cost should match")
-	assert.Equal(t, expected.Brand, actual.Brand, "expected and actual Brand should match")
-	assert.Equal(t, expected.Subtitle, actual.Subtitle, "expected and actual Subtitle should match")
-	assert.Equal(t, expected.PackageWeight, actual.PackageWeight, "expected and actual PackageWeight should match")
-	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn should match")
-	assert.Equal(t, expected.PackageWidth, actual.PackageWidth, "expected and actual PackageWidth should match")
-	assert.Equal(t, expected.Description, actual.Description, "expected and actual Description should match")
-	assert.Equal(t, expected.Manufacturer, actual.Manufacturer, "expected and actual Manufacturer should match")
-	assert.Equal(t, expected.Taxable, actual.Taxable, "expected and actual Taxable should match")
+	// func compareProductRoots(t *testing.T, expected, actual *models.ProductRoot) {
+	// 	t.Helper()
+	// 	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID should match")
+	// 	assert.Equal(t, expected.AvailableOn, actual.AvailableOn, "expected and actual AvailableOn should match")
+	// 	assert.Equal(t, expected.ProductLength, actual.ProductLength, "expected and actual ProductLength should match")
+	// 	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn should match")
+	// 	assert.Equal(t, expected.SKUPrefix, actual.SKUPrefix, "expected and actual SKUPrefix should match")
+	// 	assert.Equal(t, expected.PackageHeight, actual.PackageHeight, "expected and actual PackageHeight should match")
+	// 	assert.Equal(t, expected.ProductWeight, actual.ProductWeight, "expected and actual ProductWeight should match")
+	// 	assert.Equal(t, expected.ProductWidth, actual.ProductWidth, "expected and actual ProductWidth should match")
+	// 	assert.Equal(t, expected.QuantityPerPackage, actual.QuantityPerPackage, "expected and actual QuantityPerPackage should match")
+	// 	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name should match")
+	// 	assert.Equal(t, expected.ProductHeight, actual.ProductHeight, "expected and actual ProductHeight should match")
+	// 	assert.Equal(t, expected.PackageLength, actual.PackageLength, "expected and actual PackageLength should match")
+	// 	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn should match")
+	// 	assert.Equal(t, expected.Cost, actual.Cost, "expected and actual Cost should match")
+	// 	assert.Equal(t, expected.Brand, actual.Brand, "expected and actual Brand should match")
+	// 	assert.Equal(t, expected.Subtitle, actual.Subtitle, "expected and actual Subtitle should match")
+	// 	assert.Equal(t, expected.PackageWeight, actual.PackageWeight, "expected and actual PackageWeight should match")
+	// 	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn should match")
+	// 	assert.Equal(t, expected.PackageWidth, actual.PackageWidth, "expected and actual PackageWidth should match")
+	// 	assert.Equal(t, expected.Description, actual.Description, "expected and actual Description should match")
+	// 	assert.Equal(t, expected.Manufacturer, actual.Manufacturer, "expected and actual Manufacturer should match")
+	// 	assert.Equal(t, expected.Taxable, actual.Taxable, "expected and actual Taxable should match")
 
-	for i := range expected.Options {
-		if len(actual.Options)-1 < i {
-			t.Logf("expected %d options, got %d instead.", len(expected.Options), len(actual.Options))
-			t.Fail()
-			break
-		}
-		compareProductOptions(t, expected.Options[i], actual.Options[i], i)
-	}
+	// 	for i := range expected.Options {
+	// 		if len(actual.Options)-1 < i {
+	// 			t.Logf("expected %d options, got %d instead.", len(expected.Options), len(actual.Options))
+	// 			t.Fail()
+	// 			break
+	// 		}
+	// 		compareProductOptions(t, expected.Options[i], actual.Options[i], i)
+	// 	}
 
-	for i := range expected.Products {
-		if len(actual.Products)-1 < i {
-			t.Logf("expected %d products, got %d instead.", len(expected.Products), len(actual.Products))
-			t.Fail()
-			break
-		}
-		compareProducts(t, expected.Products[i], actual.Products[i])
-	}
-}
+	// 	for i := range expected.Products {
+	// 		if len(actual.Products)-1 < i {
+	// 			t.Logf("expected %d products, got %d instead.", len(expected.Products), len(actual.Products))
+	// 			t.Fail()
+	// 			break
+	// 		}
+	// 		compareProducts(t, expected.Products[i], actual.Products[i])
+	// 	}
+	// }
 
-// TODO: maybe these functions should just set the values that we don't care about equality for rather than check for the equality of each field
-// for instance, we don't really worry about IDs, so make this function set the expected.ID to actual.ID and then use assert to check equality
-func compareProducts(t *testing.T, expected models.Product, actual models.Product) {
-	t.Helper()
-	assert.Equal(t, expected.ProductWidth, actual.ProductWidth, "expected and actual ProductWidth should match")
-	assert.Equal(t, expected.PackageLength, actual.PackageLength, "expected and actual PackageLength should match")
-	assert.Equal(t, expected.SalePrice, actual.SalePrice, "expected and actual SalePrice should match")
-	assert.Equal(t, expected.Description, actual.Description, "expected and actual Description should match")
-	assert.Equal(t, expected.PackageWeight, actual.PackageWeight, "expected and actual PackageWeight should match")
-	assert.Equal(t, expected.Price, actual.Price, "expected and actual Price should match")
-	assert.Equal(t, expected.ProductWeight, actual.ProductWeight, "expected and actual ProductWeight should match")
-	assert.Equal(t, expected.Quantity, actual.Quantity, "expected and actual Quantity should match")
-	assert.Equal(t, expected.ProductRootID, actual.ProductRootID, "expected and actual ProductRootID should match")
-	assert.Equal(t, expected.ProductHeight, actual.ProductHeight, "expected and actual ProductHeight should match")
-	assert.Equal(t, expected.Taxable, actual.Taxable, "expected and actual Taxable should match")
-	assert.Equal(t, expected.Brand, actual.Brand, "expected and actual Brand should match")
-	assert.Equal(t, expected.ProductLength, actual.ProductLength, "expected and actual ProductLength should match")
-	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn should match")
-	assert.Equal(t, expected.AvailableOn, actual.AvailableOn, "expected and actual AvailableOn should match")
-	assert.Equal(t, expected.QuantityPerPackage, actual.QuantityPerPackage, "expected and actual QuantityPerPackage should match")
-	assert.Equal(t, expected.OnSale, actual.OnSale, "expected and actual OnSale should match")
-	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name should match")
-	assert.Equal(t, expected.SKU, actual.SKU, "expected and actual SKU should match")
-	assert.Equal(t, expected.Manufacturer, actual.Manufacturer, "expected and actual Manufacturer should match")
-	assert.Equal(t, expected.Subtitle, actual.Subtitle, "expected and actual Subtitle should match")
-	assert.Equal(t, expected.PackageWidth, actual.PackageWidth, "expected and actual PackageWidth should match")
-	assert.Equal(t, expected.Cost, actual.Cost, "expected and actual Cost should match")
-	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID should match")
-	assert.Equal(t, expected.PackageHeight, actual.PackageHeight, "expected and actual PackageHeight should match")
-	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn should match")
-	assert.Equal(t, expected.OptionSummary, actual.OptionSummary, "expected and actual OptionSummary should match")
-	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn should match")
-	assert.Equal(t, expected.UPC, actual.UPC, "expected and actual UPC should match")
+	// // TODO: maybe these functions should just set the values that we don't care about equality for rather than check for the equality of each field
+	// // for instance, we don't really worry about IDs, so make this function set the expected.ID to actual.ID and then use assert to check equality
+	// func compareProducts(t *testing.T, expected models.Product, actual models.Product) {
+	// 	t.Helper()
+	// 	assert.Equal(t, expected.ProductWidth, actual.ProductWidth, "expected and actual ProductWidth should match")
+	// 	assert.Equal(t, expected.PackageLength, actual.PackageLength, "expected and actual PackageLength should match")
+	// 	assert.Equal(t, expected.SalePrice, actual.SalePrice, "expected and actual SalePrice should match")
+	// 	assert.Equal(t, expected.Description, actual.Description, "expected and actual Description should match")
+	// 	assert.Equal(t, expected.PackageWeight, actual.PackageWeight, "expected and actual PackageWeight should match")
+	// 	assert.Equal(t, expected.Price, actual.Price, "expected and actual Price should match")
+	// 	assert.Equal(t, expected.ProductWeight, actual.ProductWeight, "expected and actual ProductWeight should match")
+	// 	assert.Equal(t, expected.Quantity, actual.Quantity, "expected and actual Quantity should match")
+	// 	assert.Equal(t, expected.ProductRootID, actual.ProductRootID, "expected and actual ProductRootID should match")
+	// 	assert.Equal(t, expected.ProductHeight, actual.ProductHeight, "expected and actual ProductHeight should match")
+	// 	assert.Equal(t, expected.Taxable, actual.Taxable, "expected and actual Taxable should match")
+	// 	assert.Equal(t, expected.Brand, actual.Brand, "expected and actual Brand should match")
+	// 	assert.Equal(t, expected.ProductLength, actual.ProductLength, "expected and actual ProductLength should match")
+	// 	assert.Equal(t, expected.CreatedOn, actual.CreatedOn, "expected and actual CreatedOn should match")
+	// 	assert.Equal(t, expected.AvailableOn, actual.AvailableOn, "expected and actual AvailableOn should match")
+	// 	assert.Equal(t, expected.QuantityPerPackage, actual.QuantityPerPackage, "expected and actual QuantityPerPackage should match")
+	// 	assert.Equal(t, expected.OnSale, actual.OnSale, "expected and actual OnSale should match")
+	// 	assert.Equal(t, expected.Name, actual.Name, "expected and actual Name should match")
+	// 	assert.Equal(t, expected.SKU, actual.SKU, "expected and actual SKU should match")
+	// 	assert.Equal(t, expected.Manufacturer, actual.Manufacturer, "expected and actual Manufacturer should match")
+	// 	assert.Equal(t, expected.Subtitle, actual.Subtitle, "expected and actual Subtitle should match")
+	// 	assert.Equal(t, expected.PackageWidth, actual.PackageWidth, "expected and actual PackageWidth should match")
+	// 	assert.Equal(t, expected.Cost, actual.Cost, "expected and actual Cost should match")
+	// 	assert.Equal(t, expected.ID, actual.ID, "expected and actual ID should match")
+	// 	assert.Equal(t, expected.PackageHeight, actual.PackageHeight, "expected and actual PackageHeight should match")
+	// 	assert.Equal(t, expected.ArchivedOn, actual.ArchivedOn, "expected and actual ArchivedOn should match")
+	// 	assert.Equal(t, expected.OptionSummary, actual.OptionSummary, "expected and actual OptionSummary should match")
+	// 	assert.Equal(t, expected.UpdatedOn, actual.UpdatedOn, "expected and actual UpdatedOn should match")
+	// 	assert.Equal(t, expected.UPC, actual.UPC, "expected and actual UPC should match")
 
-	for i := range expected.ApplicableOptionValues {
-		if len(actual.ApplicableOptionValues)-1 < i {
-			t.Logf("expected %d option values attached to product, got %d instead.", len(expected.ApplicableOptionValues), len(actual.ApplicableOptionValues))
-			t.Fail()
-			break
-		}
-		compareProductOptionValues(t, expected.ApplicableOptionValues[i], actual.ApplicableOptionValues[i], 0, i)
-	}
-}
+	// 	for i := range expected.ApplicableOptionValues {
+	// 		if len(actual.ApplicableOptionValues)-1 < i {
+	// 			t.Logf("expected %d option values attached to product, got %d instead.", len(expected.ApplicableOptionValues), len(actual.ApplicableOptionValues))
+	// 			t.Fail()
+	// 			break
+	// 		}
+	// 		compareProductOptionValues(t, expected.ApplicableOptionValues[i], actual.ApplicableOptionValues[i], 0, i)
+	// 	}
+	// }
+*/
 
 func buildNotFoundProductRootResponse(id uint64) string {
 	return fmt.Sprintf(`
@@ -852,7 +648,10 @@ func TestGetProductRoot(t *testing.T) {
 	c := buildTestClient(t, ts)
 
 	t.Run("normal usage", func(*testing.T) {
-		pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+		xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+		assert.Nil(t, err)
+		pTime := &models.Dairytime{Time: xt}
+
 		expected := &models.ProductRoot{
 			ID:                 1,
 			Name:               "Your Favorite Band's T-Shirt",
@@ -1138,19 +937,20 @@ func TestGetProductRoot(t *testing.T) {
 }
 
 func TestGetProductRoots(t *testing.T) {
-	exampleResponseJSON := loadExampleResponse(t, "product_roots")
-	handlers := map[string]http.HandlerFunc{
-		"/v1/product_roots": generateGetHandler(t, exampleResponseJSON, http.StatusOK),
-	}
-
-	ts := httptest.NewTLSServer(handlerGenerator(handlers))
-	defer ts.Close()
-	c := buildTestClient(t, ts)
-
-	pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-
 	t.Run("normal usage", func(*testing.T) {
+		exampleResponseJSON := loadExampleResponse(t, "product_roots")
+		handlers := map[string]http.HandlerFunc{
+			"/v1/product_roots": generateGetHandler(t, exampleResponseJSON, http.StatusOK),
+		}
+
+		ts := httptest.NewTLSServer(handlerGenerator(handlers))
+		defer ts.Close()
+		c := buildTestClient(t, ts)
+
+		xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+		assert.Nil(t, err)
+		pTime := &models.Dairytime{Time: xt}
+
 		expected := []models.ProductRoot{
 			{
 				ID:                 5,
@@ -1202,6 +1002,19 @@ func TestGetProductRoots(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual)
 	})
+
+	t.Run("with error", func(*testing.T) {
+		handlers := map[string]http.HandlerFunc{
+			"/v1/product_roots": generateGetHandler(t, "{}", http.StatusInternalServerError),
+		}
+
+		ts := httptest.NewTLSServer(handlerGenerator(handlers))
+		defer ts.Close()
+		c := buildTestClient(t, ts)
+
+		_, err := c.GetProductRoots(nil)
+		assert.NotNil(t, err)
+	})
 }
 
 func TestDeleteProductRoot(t *testing.T) {
@@ -1209,7 +1022,7 @@ func TestDeleteProductRoot(t *testing.T) {
 	nonexistentID := uint64(2)
 
 	handlers := map[string]http.HandlerFunc{
-		fmt.Sprintf("/v1/product_root/%d", existentID):    generateDeleteHandler(t, "{}", http.StatusNotFound),
+		fmt.Sprintf("/v1/product_root/%d", existentID):    generateDeleteHandler(t, "{}", http.StatusOK),
 		fmt.Sprintf("/v1/product_root/%d", nonexistentID): generateDeleteHandler(t, buildNotFoundProductRootResponse(nonexistentID), http.StatusNotFound),
 	}
 
@@ -1228,7 +1041,7 @@ func TestDeleteProductRoot(t *testing.T) {
 	})
 }
 
-func buildNotFoundProductOptionsResponse(productID uint64) string {
+func buildNotFoundProductOptionResponse(productID uint64) string {
 	// FIXME
 	return fmt.Sprintf(`
 		{
@@ -1247,15 +1060,16 @@ func TestGetProductOptions(t *testing.T) {
 
 	handlers := map[string]http.HandlerFunc{
 		fmt.Sprintf("/v1/product/%d/options", existentID):    generateGetHandler(t, exampleResponseJSON, http.StatusOK),
-		fmt.Sprintf("/v1/product/%d/options", nonexistentID): generateGetHandler(t, buildNotFoundProductOptionsResponse(nonexistentID), http.StatusNotFound),
+		fmt.Sprintf("/v1/product/%d/options", nonexistentID): generateGetHandler(t, buildNotFoundProductOptionResponse(nonexistentID), http.StatusNotFound),
 	}
 
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
 	assert.Nil(t, err)
+	pTime := &models.Dairytime{Time: xt}
 
 	t.Run("normal operation", func(*testing.T) {
 		expected := []models.ProductOption{
@@ -1325,7 +1139,7 @@ func TestGetProductOptions(t *testing.T) {
 }
 
 func TestCreateProductOption(t *testing.T) {
-	existentID := uint64(1)
+	existentID, nonexistentID := uint64(1), uint64(2)
 	exampleResponseJSON := loadExampleResponse(t, "created_product_options")
 	expectedBody := `
 		{
@@ -1337,25 +1151,25 @@ func TestCreateProductOption(t *testing.T) {
 			]
 		}
 	`
+	exampleInput := models.ProductOptionCreationInput{
+		Name:   "example_option",
+		Values: []string{"one", "two", "three"},
+	}
 
 	handlers := map[string]http.HandlerFunc{
-		fmt.Sprintf("/v1/product/%d/options", existentID): generatePostHandler(t, expectedBody, exampleResponseJSON, http.StatusCreated),
-		// fmt.Sprintf("/v1/product/%d/options", nonexistentID): generateGetHandler(t, buildNotFoundProductOptionsResponse(nonexistentID), http.StatusNotFound),
+		fmt.Sprintf("/v1/product/%d/options", existentID):    generatePostHandler(t, expectedBody, exampleResponseJSON, http.StatusCreated),
+		fmt.Sprintf("/v1/product/%d/options", nonexistentID): generatePostHandler(t, expectedBody, buildNotFoundProductOptionResponse(nonexistentID), http.StatusNotFound),
 	}
 
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	pTime, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
 	assert.Nil(t, err)
+	pTime := &models.Dairytime{Time: xt}
 
 	t.Run("normal operation", func(*testing.T) {
-		exampleInput := models.ProductOptionCreationInput{
-			Name:   "example_option",
-			Values: []string{"one", "two", "three"},
-		}
-
 		expected := &models.ProductOption{
 			ID:            3,
 			Name:          "example_option",
@@ -1383,29 +1197,138 @@ func TestCreateProductOption(t *testing.T) {
 			},
 		}
 
-		actual, err := c.CreateProductOption(1, exampleInput)
+		actual, err := c.CreateProductOption(existentID, exampleInput)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual)
 	})
 
+	t.Run("for nonexistent product root", func(*testing.T) {
+		_, err := c.CreateProductOption(nonexistentID, exampleInput)
+		assert.NotNil(t, err)
+	})
 }
 
 func TestUpdateProductOption(t *testing.T) {
-	t.Skip()
+	existentID, nonexistentID := uint64(1), uint64(2)
+	exampleResponseJSON := loadExampleResponse(t, "updated_product_option")
+	// FIXME
+	expectedBody := `
+		{
+			"name": "example_option_updated"
+		}
+	`
+	exampleInput := models.ProductOptionUpdateInput{
+		Name: "example_option_updated",
+	}
+
+	handlers := map[string]http.HandlerFunc{
+		fmt.Sprintf("/v1/product_options/%d", existentID):    generatePatchHandler(t, expectedBody, exampleResponseJSON, http.StatusCreated),
+		fmt.Sprintf("/v1/product_options/%d", nonexistentID): generatePatchHandler(t, expectedBody, buildNotFoundProductOptionResponse(nonexistentID), http.StatusNotFound),
+	}
+
+	ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	defer ts.Close()
+	c := buildTestClient(t, ts)
+
+	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	assert.Nil(t, err)
+	pTime := &models.Dairytime{Time: xt}
+
+	t.Run("normal operation", func(*testing.T) {
+		expected := &models.ProductOption{
+			ID:            3,
+			Name:          "example_option_updated",
+			ProductRootID: 1,
+			CreatedOn:     pTime,
+			Values: []models.ProductOptionValue{
+				{
+					ID:              7,
+					ProductOptionID: 3,
+					Value:           "one",
+					CreatedOn:       pTime,
+				},
+				{
+					ID:              8,
+					ProductOptionID: 3,
+					Value:           "two",
+					CreatedOn:       pTime,
+				},
+				{
+					ID:              9,
+					ProductOptionID: 3,
+					Value:           "three",
+					CreatedOn:       pTime,
+				},
+			},
+		}
+
+		actual, err := c.UpdateProductOption(existentID, exampleInput)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("for nonexistent product root", func(*testing.T) {
+		_, err := c.UpdateProductOption(nonexistentID, exampleInput)
+		assert.NotNil(t, err)
+	})
 }
 
 func TestDeleteProductOption(t *testing.T) {
 	t.Skip()
+	// exampleResponseJSON := loadExampleResponse(t, "deleted_product_option")
+	// existentID, nonexistentID := uint64(1), uint64(2)
+
+	// handlers := map[string]http.HandlerFunc{
+	// 	fmt.Sprintf("/v1/product_option/%d", existentID):    generateDeleteHandler(t, exampleResponseJSON, http.StatusOK),
+	// 	fmt.Sprintf("/v1/product_option/%d", nonexistentID): generateDeleteHandler(t, buildNotFoundProductOptionResponse(nonexistentID), http.StatusNotFound),
+	// }
+
+	// ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	// defer ts.Close()
+	// c := buildTestClient(t, ts)
+
+	// t.Run("with existent product", func(*testing.T) {
+	// 	err := c.DeleteProductOption(existentID)
+	// 	assert.Nil(t, err)
+	// })
+
+	// t.Run("with nonexistent product", func(*testing.T) {
+	// 	err := c.DeleteProductOption(nonexistentID)
+	// 	assert.NotNil(t, err)
+	// })
 }
 
-func TestCreateProductOptionValueForOption(t *testing.T) {
+func TestCreateProductOptionValue(t *testing.T) {
 	t.Skip()
 }
 
-func TestUpdateProductOptionValueForOption(t *testing.T) {
+func TestUpdateProductOptionValue(t *testing.T) {
 	t.Skip()
 }
 
-func TestDeleteProductOptionValueForOption(t *testing.T) {
+func TestDeleteProductOptionValue(t *testing.T) {
 	t.Skip()
+	// exampleResponseJSON := loadExampleResponse(t, "deleted_product")
+
+	// existentSKU := "existent_sku"
+	// nonexistentSKU := "nonexistent_sku"
+
+	// handlers := map[string]http.HandlerFunc{
+	// 	fmt.Sprintf("/v1/product/%s", existentSKU):    generateDeleteHandler(t, exampleResponseJSON, http.StatusOK),
+	// 	fmt.Sprintf("/v1/product/%s", nonexistentSKU): generateDeleteHandler(t, buildNotFoundProductResponse(nonexistentSKU), http.StatusNotFound),
+	// }
+
+	// ts := httptest.NewTLSServer(handlerGenerator(handlers))
+	// defer ts.Close()
+	// c := buildTestClient(t, ts)
+
+	// t.Run("with existent product", func(*testing.T) {
+	// 	err := c.DeleteProduct(existentSKU)
+	// 	assert.Nil(t, err)
+	// })
+
+	// t.Run("with nonexistent product", func(*testing.T) {
+	// 	err := c.DeleteProduct(nonexistentSKU)
+	// 	assert.NotNil(t, err)
+	// })
 }

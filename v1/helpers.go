@@ -69,18 +69,19 @@ func unmarshalBody(res *http.Response, dest interface{}) *ClientError {
 		return ce
 	}
 
+	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
+		apiErr := &models.ErrorResponse{}
+		// eating this error because it would have been caught above
+		err = json.Unmarshal(bodyBytes, &apiErr)
+		if err != nil {
+			return &ClientError{Err: err}
+		}
+		return &ClientError{FromAPI: apiErr}
+	}
+
 	err = json.Unmarshal(bodyBytes, &dest)
 	if err != nil {
 		return &ClientError{Err: err}
-	}
-
-	apiErr := &models.ErrorResponse{}
-	err = json.Unmarshal(bodyBytes, &apiErr)
-	if err != nil {
-		return &ClientError{Err: err}
-	}
-	if apiErr.Status != 0 {
-		return &ClientError{FromAPI: apiErr}
 	}
 
 	return nil

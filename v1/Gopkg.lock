@@ -5,19 +5,13 @@
   branch = "master"
   name = "github.com/dairycart/dairymodels"
   packages = ["v1"]
-  revision = "6fbb3955fab75a34ffc804f4135dad52581aba2d"
+  revision = "b3f5fa65c676db862bf00a3e8910f9c9b830f4d7"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lib/pq"
-  packages = [".","oid"]
-  revision = "83612a56d3dd153a94a629cd64925371c9adad78"
 
 [[projects]]
   name = "github.com/pkg/errors"

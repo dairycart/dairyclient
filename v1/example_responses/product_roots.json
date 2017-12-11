@@ -23,11 +23,7 @@
             "package_length": 0.5,
             "quantity_per_package": 1,
             "available_on": "2017-12-10T15:58:43.136458Z",
-            "created_on": "2017-12-10T15:58:43.136458Z",
-            "updated_on": null,
-            "archived_on": null,
-            "options": null,
-            "products": null
+            "created_on": "2017-12-10T15:58:43.136458Z"
         },
         {
             "id": 6,
@@ -49,11 +45,7 @@
             "package_length": 0.5,
             "quantity_per_package": 1,
             "available_on": "2017-12-10T15:58:43.136458Z",
-            "created_on": "2017-12-10T15:58:43.136458Z",
-            "updated_on": null,
-            "archived_on": null,
-            "options": null,
-            "products": null
+            "created_on": "2017-12-10T15:58:43.136458Z"
         }
     ]
 }
