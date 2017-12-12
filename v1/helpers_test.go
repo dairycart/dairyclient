@@ -3,6 +3,7 @@ package dairyclient_test
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -54,7 +55,10 @@ func buildTestClient(t *testing.T, ts *httptest.Server) *dairyclient.V1Client {
 func loadExampleResponse(t *testing.T, name string) string {
 	t.Helper()
 	data, err := ioutil.ReadFile(fmt.Sprintf("example_responses/%s.json", name))
-	assert.NoError(t, err)
+	if err != nil {
+		log.Printf("error encountered reading example response file: %v\n", err)
+		t.FailNow()
+	}
 	return string(data)
 }
 
@@ -71,11 +75,12 @@ func obligatoryLoginHandler(addCookie bool) http.Handler {
 
 func handlerGenerator(handlers map[string]http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for path, handlerFunc := range handlers {
-			if r.URL.Path == path {
-				handlerFunc(w, r)
-				return
-			}
+		if handlerFunc, ok := handlers[r.URL.Path]; ok {
+			handlerFunc(w, r)
+			return
+		} else {
+			http.NotFound(w, r)
+			return
 		}
 	})
 }

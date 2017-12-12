@@ -22,19 +22,18 @@ func (dc *V1Client) GetDiscountByID(discountID uint64) (*models.Discount, error)
 	return &d, nil
 }
 
-//func (dc *V1Client) GetListOfDiscounts(queryFilter map[string]string) ([]models.Discount, error) {
-	func (dc *V1Client) GetListOfDiscounts(queryFilter map[string]string) (*models.ListResponse, error) {
-	u := dc.buildURL(nil, "discount")
-	d := &models.ListResponse{}
+func (dc *V1Client) GetDiscounts(queryFilter map[string]string) ([]models.Discount, error) {
+	u := dc.buildURL(nil, "discounts")
+	d := &models.DiscountListResponse{}
 
 	err := dc.get(u, &d)
 	if err != nil {
 		return nil, err
 	}
-	return d, nil
+	return d.Discounts, nil
 }
 
-func (dc *V1Client) CreateDiscount(nd models.Discount) (*models.Discount, error) {
+func (dc *V1Client) CreateDiscount(nd models.DiscountCreationInput) (*models.Discount, error) {
 	d := models.Discount{}
 	u := dc.buildURL(nil, "discount")
 
@@ -46,9 +45,10 @@ func (dc *V1Client) CreateDiscount(nd models.Discount) (*models.Discount, error)
 	return &d, nil
 }
 
-func (dc *V1Client) UpdateDiscount(discountID uint64, ud models.Discount) (*models.Discount, error) {
+func (dc *V1Client) UpdateDiscount(discountID uint64, ud models.DiscountUpdateInput) (*models.Discount, error) {
 	d := models.Discount{}
-	u := dc.buildURL(nil, "discount")
+	discountIDString := convertIDToString(discountID)
+	u := dc.buildURL(nil, "discount", discountIDString)
 
 	err := dc.patch(u, ud, &d)
 	if err != nil {
