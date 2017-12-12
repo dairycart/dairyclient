@@ -22,11 +22,6 @@ const (
 	exampleBadJSON  = `{"invalid lol}`
 )
 
-type subtest struct {
-	Message string
-	Test    func(t *testing.T)
-}
-
 ////////////////////////////////////////////////////////
 //                                                    //
 //                 Helper Functions                   //
@@ -58,16 +53,6 @@ func createInternalClient(t *testing.T, ts *httptest.Server) *V1Client {
 	return c
 }
 
-func runSubtestSuite(t *testing.T, tests []subtest) {
-	testPassed := true
-	for _, test := range tests {
-		if !testPassed {
-			t.FailNow()
-		}
-		testPassed = t.Run(test.Message, test.Test)
-	}
-}
-
 ////////////////////////////////////////////////////////
 //                                                    //
 //                   Actual Tests                     //
@@ -75,7 +60,7 @@ func runSubtestSuite(t *testing.T, tests []subtest) {
 ////////////////////////////////////////////////////////
 
 func TestExecuteRequestAddsCookieToRequests(t *testing.T) {
-	t.Parallel()
+
 	var endpointCalled bool
 	exampleEndpoint := "/v1/whatever"
 
@@ -142,7 +127,7 @@ func TestUnexportedBuildURL(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
-	t.Parallel()
+
 	var normalEndpointCalled bool
 	var fourOhFourEndpointCalled bool
 
@@ -162,46 +147,30 @@ func TestExists(t *testing.T) {
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	c := createInternalClient(t, ts)
 
-	normalUse := func(t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		actual, err := c.exists(c.buildURL(nil, "normal"))
 		assert.Nil(t, err)
 		assert.True(t, actual, "exists should return false when the status code is %d", http.StatusOK)
 		assert.True(t, normalEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	notFound := func(t *testing.T) {
+	t.Run("not found", func(t *testing.T) {
 		actual, err := c.exists(c.buildURL(nil, "four_oh_four"))
 		assert.Nil(t, err)
 		assert.False(t, actual, "exists should return false when the status code is %d", http.StatusNotFound)
 		assert.True(t, fourOhFourEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	failsToRequest := func(t *testing.T) {
+	t.Run("failure executing request", func(t *testing.T) {
 		ts.Close()
 		actual, err := c.exists(c.buildURL(nil, "whatever"))
 		assert.NotNil(t, err)
 		assert.False(t, actual, "exists should return false when the status code is %d", http.StatusOK)
-	}
-
-	subtests := []subtest{
-		{
-			Message: "normal use",
-			Test:    normalUse,
-		},
-		{
-			Message: "not found",
-			Test:    notFound,
-		},
-		{
-			Message: "failed request",
-			Test:    failsToRequest,
-		},
-	}
-	runSubtestSuite(t, subtests)
+	})
 }
 
 func TestGet(t *testing.T) {
-	t.Parallel()
+
 	var normalEndpointCalled bool
 	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
 		"/v1/normal": func(res http.ResponseWriter, req *http.Request) {
@@ -220,7 +189,7 @@ func TestGet(t *testing.T) {
 	defer ts.Close()
 	c := createInternalClient(t, ts)
 
-	normalUse := func(t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -235,118 +204,76 @@ func TestGet(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual, "actual struct should equal expected struct")
 		assert.True(t, normalEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	nilInput := func(t *testing.T) {
+	t.Run("nil input", func(t *testing.T) {
 		nilErr := c.get(c.buildURL(nil, "whatever"), nil)
 		assert.NotNil(t, nilErr)
-	}
+	})
 
-	nonPointerInput := func(t *testing.T) {
+	t.Run("non pointer input", func(t *testing.T) {
 		actual := struct {
 			Things string `json:"things"`
 		}{}
 
 		ptrErr := c.get(c.buildURL(nil, "whatever"), actual)
 		assert.NotNil(t, ptrErr)
-	}
-
-	subtests := []subtest{
-		{
-			Message: "normal use",
-			Test:    normalUse,
-		},
-		{
-			Message: "nil input",
-			Test:    nilInput,
-		},
-		{
-			Message: "non-pointer input",
-			Test:    nonPointerInput,
-		},
-	}
-	runSubtestSuite(t, subtests)
+	})
 }
 
 func TestDelete(t *testing.T) {
-	t.Parallel()
-	var normalEndpointCalled bool
-	var fiveHundredEndpointCalled bool
-
 	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
 		"/v1/normal": func(res http.ResponseWriter, req *http.Request) {
-			normalEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodDelete, "delete should be making DELETE requests")
+			fmt.Fprintf(res, "{}")
 		},
 		"/v1/five_hundred": func(res http.ResponseWriter, req *http.Request) {
-			fiveHundredEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodDelete, "delete should be making DELETE requests")
 			res.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(res, `
+				{
+					"status": 500,
+					"message": "obligatory error"
+				}
+			`)
 		},
 	}
 
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	c := createInternalClient(t, ts)
 
-	normalUse := func(t *testing.T) {
+	t.Run("normal usage", func(t *testing.T) {
 		err := c.delete(c.buildURL(nil, "normal"))
 		assert.Nil(t, err)
-		assert.True(t, normalEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	badStatusCode := func(t *testing.T) {
-		err := c.delete(c.buildURL(nil, "five_hundred"))
+	t.Run("bad status code", func(t *testing.T) {
+		u := c.buildURL(nil, "five_hundred")
+		err := c.delete(u)
 		assert.NotNil(t, err)
-		assert.True(t, fiveHundredEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	failedRequest := func(t *testing.T) {
+	t.Run("failed request", func(t *testing.T) {
 		ts.Close()
 		err := c.delete(c.buildURL(nil, "whatever"))
 		assert.NotNil(t, err)
-	}
-
-	subtests := []subtest{
-		{
-			Message: "normal use",
-			Test:    normalUse,
-		},
-		{
-			Message: "bad status code",
-			Test:    badStatusCode,
-		},
-		{
-			Message: "failed request",
-			Test:    failedRequest,
-		},
-	}
-	runSubtestSuite(t, subtests)
+	})
 }
 
 func TestMakeDataRequest(t *testing.T) {
-	t.Parallel()
-	var normalEndpointCalled bool
-	var badJSONEndpointCalled bool
-
 	handlers := map[string]func(res http.ResponseWriter, req *http.Request){
 		"/v1/whatever": func(res http.ResponseWriter, req *http.Request) {
-			normalEndpointCalled = true
 			assert.Equal(t, req.Method, http.MethodPost, "makeDataRequest should only be making PUT or POST requests")
+			exampleResponse := `{"things":"stuff"}`
 
 			bodyBytes, err := ioutil.ReadAll(req.Body)
 			assert.Nil(t, err)
 			requestBody := string(bodyBytes)
-			assert.Equal(t, requestBody, `{"things":"stuff"}`, "makeDataRequest should attach the correct JSON to the request body")
+			assert.Equal(t, requestBody, exampleResponse, "makeDataRequest should attach the correct JSON to the request body")
 
-			exampleResponse := `
-				{
-					"things": "stuff"
-				}
-			`
 			fmt.Fprintf(res, exampleResponse)
 		},
 		"/v1/bad_json": func(res http.ResponseWriter, req *http.Request) {
-			badJSONEndpointCalled = true
 			fmt.Fprintf(res, exampleBadJSON)
 		},
 	}
@@ -354,7 +281,7 @@ func TestMakeDataRequest(t *testing.T) {
 	ts := httptest.NewTLSServer(handlerGenerator(handlers))
 	c := createInternalClient(t, ts)
 
-	normalUse := func(t *testing.T) {
+	t.Run("normal usage", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -368,26 +295,25 @@ func TestMakeDataRequest(t *testing.T) {
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), expected, &actual)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual, "actual struct should equal expected struct")
-		assert.True(t, normalEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	nilArgument := func(t *testing.T) {
+	t.Run("nil argument", func(*testing.T) {
 		ptrErr := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), struct{}{}, struct{}{})
 		assert.NotNil(t, ptrErr, "makeDataRequest should return an error when passed a non-pointer output param")
-	}
+	})
 
-	nonPtrArgument := func(t *testing.T) {
+	t.Run("non-pointer argument", func(*testing.T) {
 		nilErr := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), struct{}{}, nil)
 		assert.NotNil(t, nilErr, "makeDataRequest should return an error when passed a nil output param")
-	}
+	})
 
-	invalidStructArgument := func(t *testing.T) {
+	t.Run("invalid struct argument", func(*testing.T) {
 		f := &testBreakableStruct{Thing: "dongs"}
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), f, &struct{}{})
 		assert.NotNil(t, err, "makeDataRequest should return an error when passed an invalid input struct")
-	}
+	})
 
-	unmarshalFailure := func(t *testing.T) {
+	t.Run("unmarshal failure", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -400,10 +326,9 @@ func TestMakeDataRequest(t *testing.T) {
 
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "bad_json"), expected, &actual)
 		assert.NotNil(t, err)
-		assert.True(t, badJSONEndpointCalled, "endpoint should have been called")
-	}
+	})
 
-	failedRequest := func(t *testing.T) {
+	t.Run("failed request", func(*testing.T) {
 		expected := struct {
 			Things string `json:"things"`
 		}{
@@ -417,39 +342,11 @@ func TestMakeDataRequest(t *testing.T) {
 		ts.Close()
 		err := c.makeDataRequest(http.MethodPost, c.buildURL(nil, "whatever"), expected, &actual)
 		assert.NotNil(t, err, "makeDataRequest should return an error when failing to execute request")
-	}
-
-	subtests := []subtest{
-		{
-			Message: "normal use",
-			Test:    normalUse,
-		},
-		{
-			Message: "nil argument",
-			Test:    nilArgument,
-		},
-		{
-			Message: "non-pointer argument",
-			Test:    nonPtrArgument,
-		},
-		{
-			Message: "invalid struct",
-			Test:    invalidStructArgument,
-		},
-		{
-			Message: "unmarshal failure",
-			Test:    unmarshalFailure,
-		},
-		{
-			Message: "failed request",
-			Test:    failedRequest,
-		},
-	}
-	runSubtestSuite(t, subtests)
+	})
 }
 
 func TestPost(t *testing.T) {
-	t.Parallel()
+
 	var endpointCalled bool
 	exampleEndpoint := "/v1/whatever"
 
@@ -480,14 +377,15 @@ func TestPost(t *testing.T) {
 		Things string `json:"things"`
 	}{}
 
-	err := c.post(c.buildURL(nil, "whatever"), expected, &actual)
+	exampleURI := c.buildURL(nil, "whatever")
+	err := c.post(exampleURI, expected, &actual)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, actual, "actual struct should equal expected struct")
 	assert.True(t, endpointCalled, "endpoint should have been called")
 }
 
 func TestPatch(t *testing.T) {
-	t.Parallel()
+
 	var endpointCalled bool
 	exampleEndpoint := "/v1/whatever"
 

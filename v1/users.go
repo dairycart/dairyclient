@@ -2,6 +2,8 @@ package dairyclient
 
 import (
 	"net/http"
+
+	"github.com/dairycart/dairymodels/v1"
 )
 
 ////////////////////////////////////////////////////////
@@ -11,7 +13,7 @@ import (
 ////////////////////////////////////////////////////////
 
 // CreateUser takes a UserCreationInput and creates the user in Dairycart
-func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
+func (dc *V1Client) CreateUser(nu models.UserCreationInput) (*models.User, error) {
 	u := dc.buildURL(nil, "user")
 	body, _ := createBodyFromStruct(nu)
 
@@ -21,10 +23,10 @@ func (dc *V1Client) CreateUser(nu UserCreationInput) (*User, error) {
 		return nil, err
 	}
 
-	ru := User{}
-	err = unmarshalBody(res, &ru)
-	if err != nil {
-		return nil, err
+	ru := models.User{}
+	apiErr := unmarshalBody(res, &ru)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 
 	return &ru, nil
