@@ -8,10 +8,13 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/dairycart/dairyclient/v1"
+	"github.com/dairycart/dairymodels/v1"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify"
 	jsonMinify "github.com/tdewolff/minify/json"
 )
@@ -31,6 +34,20 @@ const (
 //               Test Helper Functions                //
 //                                                    //
 ////////////////////////////////////////////////////////
+
+func buildTestTime(t *testing.T) time.Time {
+	t.Helper()
+	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	require.NoError(t, err)
+	return xt
+}
+
+func buildTestDairytime(t *testing.T) *models.Dairytime {
+	t.Helper()
+	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
+	require.NoError(t, err)
+	return &models.Dairytime{Time: xt}
+}
 
 func buildTestCookie() *http.Cookie {
 	c := &http.Cookie{Name: "dairycart"}

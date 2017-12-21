@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/dairycart/dairymodels/v1"
 
@@ -531,10 +530,6 @@ func TestGetProductRoot(t *testing.T) {
 	c := buildTestClient(t, ts)
 
 	t.Run("normal usage", func(*testing.T) {
-		xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-		assert.Nil(t, err)
-		pTime := &models.Dairytime{Time: xt}
-
 		expected := &models.ProductRoot{
 			ID:                 1,
 			Name:               "Your Favorite Band's T-Shirt",
@@ -554,20 +549,20 @@ func TestGetProductRoot(t *testing.T) {
 			PackageWidth:       5,
 			PackageLength:      5,
 			QuantityPerPackage: 1,
-			AvailableOn:        pTime,
-			CreatedOn:          pTime,
+			AvailableOn:        buildTestTime(t),
+			CreatedOn:          buildTestTime(t),
 			Options: []models.ProductOption{
 				{
 					ID:            1,
 					ProductRootID: 1,
 					Name:          "color",
-					CreatedOn:     pTime,
+					CreatedOn:     buildTestTime(t),
 				},
 				{
 					ID:            2,
 					ProductRootID: 1,
 					Name:          "size",
-					CreatedOn:     pTime,
+					CreatedOn:     buildTestTime(t),
 				},
 			},
 			Products: []models.Product{
@@ -594,8 +589,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 2,
@@ -620,8 +615,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 3,
@@ -646,8 +641,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 4,
@@ -672,8 +667,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 5,
@@ -698,8 +693,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 6,
@@ -724,8 +719,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 7,
@@ -750,8 +745,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 8,
@@ -776,8 +771,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 				{
 					ID:                 9,
@@ -802,8 +797,8 @@ func TestGetProductRoot(t *testing.T) {
 					PackageWidth:       5,
 					PackageLength:      5,
 					QuantityPerPackage: 1,
-					AvailableOn:        pTime,
-					CreatedOn:          pTime,
+					AvailableOn:        buildTestTime(t),
+					CreatedOn:          buildTestTime(t),
 				},
 			},
 		}
@@ -830,10 +825,6 @@ func TestGetProductRoots(t *testing.T) {
 		defer ts.Close()
 		c := buildTestClient(t, ts)
 
-		xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-		assert.Nil(t, err)
-		pTime := &models.Dairytime{Time: xt}
-
 		expected := []models.ProductRoot{
 			{
 				ID:                 5,
@@ -854,8 +845,8 @@ func TestGetProductRoots(t *testing.T) {
 				PackageWidth:       12,
 				Cost:               5,
 				Taxable:            true,
-				AvailableOn:        pTime,
-				CreatedOn:          pTime,
+				AvailableOn:        buildTestTime(t),
+				CreatedOn:          buildTestTime(t),
 			},
 			{
 				ID:                 6,
@@ -876,8 +867,8 @@ func TestGetProductRoots(t *testing.T) {
 				PackageWidth:       12,
 				Cost:               5,
 				Taxable:            true,
-				AvailableOn:        pTime,
-				CreatedOn:          pTime,
+				AvailableOn:        buildTestTime(t),
+				CreatedOn:          buildTestTime(t),
 			},
 		}
 
@@ -953,35 +944,31 @@ func TestGetProductOptions(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	pTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		expected := []models.ProductOption{
 			{
 				ID:            1,
 				Name:          "color",
 				ProductRootID: 1,
-				CreatedOn:     pTime,
+				CreatedOn:     buildTestTime(t),
 				Values: []models.ProductOptionValue{
 					{
 						ID:              1,
 						ProductOptionID: 1,
 						Value:           "red",
-						CreatedOn:       pTime,
+						CreatedOn:       buildTestTime(t),
 					},
 					{
 						ID:              2,
 						ProductOptionID: 1,
 						Value:           "green",
-						CreatedOn:       pTime,
+						CreatedOn:       buildTestTime(t),
 					},
 					{
 						ID:              3,
 						ProductOptionID: 1,
 						Value:           "blue",
-						CreatedOn:       pTime,
+						CreatedOn:       buildTestTime(t),
 					},
 				},
 			},
@@ -989,25 +976,25 @@ func TestGetProductOptions(t *testing.T) {
 				ID:            2,
 				Name:          "size",
 				ProductRootID: 1,
-				CreatedOn:     pTime,
+				CreatedOn:     buildTestTime(t),
 				Values: []models.ProductOptionValue{
 					{
 						ID:              4,
 						ProductOptionID: 2,
 						Value:           "small",
-						CreatedOn:       pTime,
+						CreatedOn:       buildTestTime(t),
 					},
 					{
 						ID:              5,
 						ProductOptionID: 2,
 						Value:           "medium",
-						CreatedOn:       pTime,
+						CreatedOn:       buildTestTime(t),
 					},
 					{
 						ID:              6,
 						ProductOptionID: 2,
 						Value:           "large",
-						CreatedOn:       pTime,
+						CreatedOn:       buildTestTime(t),
 					},
 				},
 			},
@@ -1051,34 +1038,30 @@ func TestCreateProductOption(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	pTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		expected := &models.ProductOption{
 			ID:            3,
 			Name:          "example_option",
 			ProductRootID: 1,
-			CreatedOn:     pTime,
+			CreatedOn:     buildTestTime(t),
 			Values: []models.ProductOptionValue{
 				{
 					ID:              7,
 					ProductOptionID: 3,
 					Value:           "one",
-					CreatedOn:       pTime,
+					CreatedOn:       buildTestTime(t),
 				},
 				{
 					ID:              8,
 					ProductOptionID: 3,
 					Value:           "two",
-					CreatedOn:       pTime,
+					CreatedOn:       buildTestTime(t),
 				},
 				{
 					ID:              9,
 					ProductOptionID: 3,
 					Value:           "three",
-					CreatedOn:       pTime,
+					CreatedOn:       buildTestTime(t),
 				},
 			},
 		}
@@ -1116,34 +1099,30 @@ func TestUpdateProductOption(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	pTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		expected := &models.ProductOption{
 			ID:            3,
 			Name:          "example_option_updated",
 			ProductRootID: 1,
-			CreatedOn:     pTime,
+			CreatedOn:     buildTestTime(t),
 			Values: []models.ProductOptionValue{
 				{
 					ID:              7,
 					ProductOptionID: 3,
 					Value:           "one",
-					CreatedOn:       pTime,
+					CreatedOn:       buildTestTime(t),
 				},
 				{
 					ID:              8,
 					ProductOptionID: 3,
 					Value:           "two",
-					CreatedOn:       pTime,
+					CreatedOn:       buildTestTime(t),
 				},
 				{
 					ID:              9,
 					ProductOptionID: 3,
 					Value:           "three",
-					CreatedOn:       pTime,
+					CreatedOn:       buildTestTime(t),
 				},
 			},
 		}
@@ -1204,16 +1183,12 @@ func TestCreateProductOptionValue(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	pTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		expected := &models.ProductOptionValue{
 			ID:              8,
 			ProductOptionID: 2,
 			Value:           "large",
-			CreatedOn:       pTime,
+			CreatedOn:       buildTestTime(t),
 		}
 
 		actual, err := c.CreateProductOptionValue(existentID, exampleInput)
@@ -1248,16 +1223,12 @@ func TestUpdateProductOptionValue(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	pTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		expected := &models.ProductOptionValue{
 			ID:              8,
 			ProductOptionID: 2,
 			Value:           "large",
-			CreatedOn:       pTime,
+			CreatedOn:       buildTestTime(t),
 		}
 
 		actual, err := c.UpdateProductOptionValue(existentID, exampleInput)

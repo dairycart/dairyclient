@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/dairycart/dairymodels/v1"
 
@@ -34,23 +33,19 @@ func TestGetDiscountByID(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	dTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal usage", func(*testing.T) {
 		expected := &models.Discount{
 			ID:            1,
 			Name:          "10 percent off",
 			DiscountType:  "percentage",
 			Amount:        10,
-			StartsOn:      dTime,
-			ExpiresOn:     dTime,
+			StartsOn:      buildTestTime(t),
+			ExpiresOn:     buildTestDairytime(t),
 			RequiresCode:  false,
 			LimitedUse:    false,
 			NumberOfUses:  0,
 			LoginRequired: false,
-			CreatedOn:     dTime,
+			CreatedOn:     buildTestTime(t),
 		}
 		actual, err := c.GetDiscountByID(existentID)
 
@@ -67,10 +62,6 @@ func TestGetDiscountByID(t *testing.T) {
 func TestGetDiscounts(t *testing.T) {
 	exampleGoodResponse := loadExampleResponse(t, "discounts")
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	dTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal usage", func(*testing.T) {
 		expected := []models.Discount{
 			{
@@ -78,27 +69,27 @@ func TestGetDiscounts(t *testing.T) {
 				Name:         "10 percent off",
 				DiscountType: "percentage",
 				Amount:       10,
-				StartsOn:     dTime,
-				ExpiresOn:    dTime,
-				CreatedOn:    dTime,
+				StartsOn:     buildTestTime(t),
+				ExpiresOn:    buildTestDairytime(t),
+				CreatedOn:    buildTestTime(t),
 			},
 			{
 				ID:           2,
 				Name:         "50 percent off",
 				DiscountType: "percentage",
 				Amount:       50,
-				StartsOn:     dTime,
-				ExpiresOn:    dTime,
-				CreatedOn:    dTime,
+				StartsOn:     buildTestTime(t),
+				ExpiresOn:    buildTestDairytime(t),
+				CreatedOn:    buildTestTime(t),
 			},
 			{
 				ID:           3,
 				Name:         "New customer special",
 				DiscountType: "flat_amount",
 				Amount:       10,
-				StartsOn:     dTime,
-				ExpiresOn:    dTime,
-				CreatedOn:    dTime,
+				StartsOn:     buildTestTime(t),
+				ExpiresOn:    buildTestDairytime(t),
+				CreatedOn:    buildTestTime(t),
 			},
 		}
 
@@ -137,10 +128,6 @@ func TestCreateDiscount(t *testing.T) {
 		Name: "example_discount",
 	}
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	dTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		handlers := map[string]http.HandlerFunc{"/v1/discount": generatePostHandler(t, expectedBody, exampleResponseJSON, http.StatusCreated)}
 		ts := httptest.NewTLSServer(handlerGenerator(handlers))
@@ -152,13 +139,13 @@ func TestCreateDiscount(t *testing.T) {
 			Name:          "10 percent off",
 			DiscountType:  "percentage",
 			Amount:        10,
-			StartsOn:      dTime,
-			ExpiresOn:     dTime,
+			StartsOn:      buildTestTime(t),
+			ExpiresOn:     buildTestDairytime(t),
 			RequiresCode:  false,
 			LimitedUse:    false,
 			NumberOfUses:  0,
 			LoginRequired: false,
-			CreatedOn:     dTime,
+			CreatedOn:     buildTestTime(t),
 		}
 
 		actual, err := c.CreateDiscount(exampleInput)
@@ -197,24 +184,20 @@ func TestUpdateDiscount(t *testing.T) {
 	defer ts.Close()
 	c := buildTestClient(t, ts)
 
-	xt, err := time.Parse(timeLayout, "2017-12-10T15:58:43.136458Z")
-	assert.Nil(t, err)
-	dTime := &models.Dairytime{Time: xt}
-
 	t.Run("normal operation", func(*testing.T) {
 		expected := &models.Discount{
 			ID:            1,
 			Name:          "update_discount",
 			DiscountType:  "percentage",
 			Amount:        10,
-			StartsOn:      dTime,
-			ExpiresOn:     dTime,
+			StartsOn:      buildTestTime(t),
+			ExpiresOn:     buildTestDairytime(t),
 			RequiresCode:  false,
 			LimitedUse:    false,
 			NumberOfUses:  0,
 			LoginRequired: false,
-			CreatedOn:     dTime,
-			UpdatedOn:     dTime,
+			CreatedOn:     buildTestTime(t),
+			UpdatedOn:     buildTestDairytime(t),
 		}
 
 		actual, err := c.UpdateDiscount(existentID, exampleInput)

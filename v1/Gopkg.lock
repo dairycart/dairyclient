@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/dairycart/dairymodels"
   packages = ["v1"]
-  revision = "b3f5fa65c676db862bf00a3e8910f9c9b830f4d7"
+  revision = "6d187cf0d89318d0a3a9ba1a5b95a673f27f4470"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -27,7 +27,7 @@
 
 [[projects]]
   name = "github.com/stretchr/testify"
-  packages = ["assert"]
+  packages = ["assert","require"]
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
@@ -46,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d31d78cee0bb7c33c39a569fb1e3fbb24b2efcb24772149609db7b05870ba4c5"
+  inputs-digest = "eb60a67a8d046280abcfb6562cc66d92c4449a3575939de6cf252a0d8ce59283"
   solver-name = "gps-cdcl"
   solver-version = 1
